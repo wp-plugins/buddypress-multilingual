@@ -1,0 +1,46 @@
+
+
+
+#lang-switcher img {
+	position: relative;
+	top: 1px;	
+}
+
+#footer_language_list {
+  margin: 0;
+  padding: 5px 0 5px 0;
+  text-align: center;
+  background: #f0f0f0;
+  border: 1px solid Silver;
+}
+
+#footer_language_list ul {
+  list-style: none;
+  margin:0;
+  padding:0;
+}
+
+#footer_language_list ul li img {
+  margin-right:5px;
+  position: relative;
+  top: 1px;
+}
+
+#footer_language_list ul li {
+  display:inline;
+  margin:0 5px 0 5px;
+  padding:0;
+}
+
+#footer_language_list ul li a, #footer_language_list ul li a:visited {
+  color: Silver;
+  text-decoration: none;
+}
+
+#footer_language_list ul li a:hover, #footer_language_list ul li a:active {
+  color: Black;
+}
+
+
+.wpml-breadcrumbs { position: absolute; }
+.wpml-post-aviability { float:right; position:relative; top:-2em; }
