@@ -24,54 +24,80 @@ Site Wide only: true
     along with BuddyPress Multilingual.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-define('WPMLBP_PLUGIN_URL', WP_CONTENT_URL . '/' . basename(dirname(dirname(__FILE__))) . '/' . basename(dirname(__FILE__)) );
-define('WPMLBP_PLUGIN_DIR', dirname(__FILE__) ); //WP_CONTENT_DIR
-
 class SitePressBp {
 
-	private $settings;
-    private $lang;
-	private $this_lang;
+	private $abspath;
+	private $relpath;
 	
-	// Globals
-	private $sitepress;
-	public $bp;
-	public $blog;
+	private $settings; // WPML settings
+    public $lang;
+	public $default_lang;
+	public $active_langs;
+	
+	public $siteurl; // Original URL
+	public $siteurl_new; // Lang URL
+	
+	public $blogs = array(); // All blogs info
+	public $blogs_search = array(); // Search array to match hrefs
+	public $home_blog; // Main BP blog
+	public $blog; // Current blog
+	
+	private $https;
 
 	function __construct(){
-			// Don't want to use plugin in admin area yet.
-		if (is_admin()) return;
-			// Before core class.
-		add_action ('plugins_loaded', array(&$this,'pre_init'),0);
-			// Wait for core class to load // but before Bp
-		add_action ('plugins_loaded', array(&$this,'init'),2);
-		add_filter ('bp_core_get_root_domain', array(&$this,'blog_option_siteurl_trim'));
-			// After Bp globals.
-		add_action ('plugins_loaded', array(&$this,'post_init'),9999);
+		if (defined('WP_ADMIN')) return; // Don't want to use plugin in admin area yet.
+		add_action ('plugins_loaded', array(&$this,'init'),2); // after WPML, before Bp
+		$this->abspath = dirname(__FILE__);
+		$this->relpath = WP_CONTENT_URL . '/' . basename(dirname(dirname(__FILE__))) . '/' . basename(dirname(__FILE__));
+		$this->https = ($_SERVER['HTTPS'] == 'on') ? 's' : '';
 	}
 
-	function pre_init(){}
-
 	function init(){
-		if (!defined('BP_VERSION') || !defined('ICL_SITEPRESS_VERSION')) return;
+		if (!defined('BP_VERSION')) return;
 		
 		global $current_blog;
 		$this->blog = $current_blog;
+		//if($current_blog->blog_id != BP_ROOT_BLOG) return;
+		
+		$this->siteurl = 'http'.$this->https.'://'.$this->blog->domain.rtrim($this->blog->path,'/');
+		
+		if (!defined('ICL_SITEPRESS_VERSION')) {
+			if ($this->blog->blog_id == BP_ROOT_BLOG) return;
+			$home = get_blog_option( BP_ROOT_BLOG, 'siteurl' );
+			if ( !$_SERVER['HTTP_REFERER'] && strpos($_SERVER['HTTP_REFERER'],$this->siteurl) !== false ) return;
+			$url_lang = $this->get_url_lang();
+			$is_lang = $this->is_lang($url_lang);
+			if ( $is_lang != false ) {
+				$redirect = 'http'.$this->https.'://'.$_SERVER['HTTP_HOST'] . '/' . str_replace('/'.$url_lang, '', ltrim($_SERVER['REQUEST_URI'],'/') );
+				header('Location: '.$redirect.'' );
+				exit;
+			}
+			return;
+		}
+		
+		$blogs  = get_blog_list( 0, 'all' );
+		foreach ($blogs as $k => $v) {
+			//if TODO: domains?
+			if ($v['blog_id'] == BP_ROOT_BLOG ) $this->home_blog = rtrim('http'.$this->https.'://'.$v['domain'].$v['path'],'/');
+			else if ( $this->siteurl.'/' != 'http'.$this->https.'://'.$v['domain'].$v['path'] )
+				$this->blogs_search[] = rtrim('http'.$this->https.'://'.$v['domain'].$v['path'],'/');
+			$this->blogs[$v['blog_id']]['domain'] = $v['domain'];
+			$this->blogs[$v['blog_id']]['path'] = $v['path'];
+			$this->blogs[$v['blog_id']]['fullpath'] = rtrim('http'.$this->https.'://'.$v['domain'].$v['path'],'/');
+		}
 		
 		global $sitepress;
-  		/*remove_action('plugins_loaded', array($sitepress,'init'));
-  		add_action('plugins_loaded', array($sitepress,'init'), 1);*/
+  		//remove_action('plugins_loaded', array($sitepress,'init'));
+  		//add_action('plugins_loaded', array($sitepress,'init'), 1);
+		remove_action('pre_option_home', array($sitepress,'pre_option_home'));
 		
-		
-		$this->sitepress = $sitepress;
 		$this->settings = get_option('icl_sitepress_settings');
+		$this->active_langs = $sitepress->get_active_languages();
+		$this->lang = $sitepress->get_current_language();
+		$this->default_lang = $sitepress->get_default_language();
 		
-		$this->lang = $this->sitepress->get_current_language();
-		$this->this_lang = $this->lang;
 		
-			// TODO: if not main blog don't add this hooks
-		//if ($this->blog->blog_id != BP_ROOT_BLOG) return;
-		
+		add_action('wp_print_styles',  array(&$this,'stylesheet'));
 		add_action( 'init', array(&$this,'translate_widgets') );
 		add_action( 'wp_footer', array(&$this,'footer') );
 		
@@ -79,48 +105,106 @@ class SitePressBp {
 		//add_action( 'wp', array(&$this,'filter_bp_nav'), 99 );
 		//add_action( 'admin_menu', array(&$this,'filter_bp_nav'), 99 );
 		
+			// Blog URL HOOKS
+		add_filter('pre_option_home', array(&$this,'pre_option_home'),11);
+		//add_filter('option_home', array(&$this,'option_siteurl'),11);
+		add_filter('option_siteurl', array(&$this,'option_siteurl'),11,2);
+		add_filter('blog_option_siteurl', array(&$this,'blog_option_siteurl'),11,2);
+		add_filter('blog_option_home', array(&$this,'blog_option_siteurl'),11,2);
+		add_filter('bp_core_get_root_domain', array(&$this,'bp_core_get_root_domain'),999);
+		add_filter('site_url', array(&$this,'site_url'),11,3);
+		
 			// WP HOOKS
 		add_filter( 'the_content', array(&$this,'content') );
-		//add_filter('wp_redirect', array(&$this,'redirect') );
-		add_filter( 'comment_post_redirect', array(&$this,'comment_post_redirect'),9999,1);
+		add_filter('wp_redirect', array(&$this,'redirect') ); // messes up subblog login?
+		add_filter( 'comment_post_redirect', array(&$this,'redirect'),9999,1);
 		add_filter( 'logout_url', array(&$this,'filter_wp_logout_url'),9999,2 );
+		//add_action( 'switch_blog', array(&$this,'switch_blog'));
+		add_action( 'switch_blog_back', array(&$this,'switch_blog_back'),0,2);
 		
-			// Converting WP urls
-		//add_filter('option_siteurl', array(&$this,'filter_subblog_url'),0,1); // used by bp->root_domain
-		//add_filter('option_home', array(&$this,'option_home'),0);
+		//remove_action('bp_adminbar_menus', 'bp_adminbar_blogs_menu', 6);
+		//add_action('bp_adminbar_menus', array(&$this,'adminbar_blogs_menu'), 6);
+		add_action( 'bp_adminbar_menus', array(&$this,'switch_blog'),0);
+		add_action('bp_adminbar_menus', array(&$this,'adminbar_lang_switcher_menu'), 99);
 		
-			// Converting WPMU blog urls
-		add_filter('blog_option_siteurl', array(&$this,'blog_option_siteurl_notrim'),0,1);
-		add_filter('site_url', array(&$this,'site_url'),0,1);
-		//add_filter('blog_option_home', array(&$this,'blog_option_siteurl_notrim'),0,1); // 1x used
-
+			// This checks if we link from main blog to subblog with unactive lang;
+		$this->check_main_to_subblog();
+		
 		//if (isset($_GET['hooks'])) include WPMLBP_PLUGIN_DIR . '/hooks.class.php';
-		include WPMLBP_PLUGIN_DIR . '/hooks.php';
+		include $this->abspath . '/hooks.php';
 	}
 
-	function post_init() {
-	
-		//global $sitepress;
-  		//remove_action('plugins_loaded', array($sitepress,'init'));
-  		//add_action('plugins_loaded', array($sitepress,'init'), 1);
-		// This should be discussed
-		//remove_action('pre_option_home', array($sitepress,'pre_option_home'));
-		
+	function post_init(){
 		if (!defined('BP_VERSION') || !defined('ICL_SITEPRESS_VERSION')) return;
-		
-		add_action( 'bp_adminbar_menus', array(&$this,'adminbar_lang_switcher_menu'), 99);
-		remove_action('bp_adminbar_menus', 'bp_adminbar_blogs_menu', 6);
-		add_action('bp_adminbar_menus', array(&$this,'adminbar_blogs_menu'), 6);
-		
-			// TODO: if not main blog don't add this hooks
-		//if ($this->blog->blog_id != BP_ROOT_BLOG) return;
-		
-		//global $bp; //echo '<pre>'; print_r($bp); echo '</pre>';
-		add_filter('post_link',array(&$this,'convert_title_url'));
+		global $bp;
+		$bp->siteurl = $this->siteurl;
 	}
 
-	function filter_link ($url) { // Used to test switch
-		return $this->sitepress->convert_url($url);
+	function pre_option_home(){
+		$dbbt = debug_backtrace();
+		if( $dbbt[3]['file'] != @realpath(TEMPLATEPATH . '/header.php') ||  $this->lang == $this->default_lang )
+			return false;
+		if ( $this->settings['language_negotiation_type'] == 1 ) {
+			$this->siteurl_new = $this->check_doubles($this->siteurl . '/'. $this->lang);
+			return $this->siteurl_new;
+		} else {
+			return false;
+		}
+	}
+
+	function option_siteurl( $url, $code = false ){
+		if ( $this->switch_blog ) return $url;
+		if ( !$code && $this->lang == $this->default_lang ) return $url;
+		$lang = ($code) ? $code : $this->lang;
+		if ( $this->settings['language_negotiation_type'] == 1 ) {
+			$subblog = $this->check_subblog($url);
+			$url_match = ($subblog) ? $subblog : $this->siteurl;
+			$url = str_replace ( $url_match, $url_match . '/'. $lang, $url );
+			return $this->check_doubles($url);
+		} else {
+			return $url;
+		}
+	}
+
+	function blog_option_siteurl($url, $blog_id = false){
+		if ( $this->lang == $this->default_lang ) return $url;
+		if ( $this->settings['language_negotiation_type'] == 1 ) {
+			$blog_home = ($blog_id) ? $this->blogs[$blog_id]['fullpath'] : $this->siteurl;
+			return $blog_home . '/'. $this->lang;
+		} else {
+			return $url;
+		}
+	}
+
+	function bp_core_get_root_domain($url) {
+		if ( $this->lang == $this->default_lang ) return $url;
+		return $this->home_blog . '/'. $this->lang;
+	}
+
+	function site_url($url, $path, $orig_scheme) {
+		if (preg_match('/(wp-login|wp-admin)/',$path) !== false) return $this->remove_lang($url);
+		//if (strpos($path,'wp-admin') !== false) return $this->remove_lang($url);
+		else return $url;
+	}
+
+	function check_subblog($url) {
+		$match = false;
+		foreach ($this->blogs_search as $subblog) {
+			if ($match) continue;
+			if ( stripos($url,$subblog) !== false ) { $match = $subblog; }
+		}
+		return $match;
+	}
+
+	function switch_blog(){ //$new_id,$prev_id
+		$this->switch_blog = true;
+		return;
+		if ($new_id == $prev_id) $this->switch_blog = $prev_id;
+		else $this->switch_blog = $new_id;
+	}
+
+	function switch_blog_back(){
+		$this->switch_blog = false;
 	}
 
 	function translate ( $str, $echo = false ) {
@@ -128,98 +212,29 @@ class SitePressBp {
 		else return __($str,'buddypress');
 	}
 
-	function test_hook ($p1=false,$p2=false,$p3=false) {
-		echo '<font color="#FF0000"><strong>THIS IS NOT FILTERED</strong></font><br>';
-		if ($p1) print_r($p1); if ($p2) print_r($p2); if ($p3) print_r($p3); 
-		echo '<br><br>';
-		return $p1;
-	}
-
-	function blog_option_siteurl_trim($url){
-			// Called by $bp->root_domain filter on construct.
-		if (!defined('BP_VERSION') || !defined('ICL_SITEPRESS_VERSION')) return;
-		return $this->filter_blog_url($url,true);
-	}
-
-	function blog_option_siteurl_notrim($url){
-		return $this->filter_blog_url($url);
-	}
-
-	function site_url($url){
-		if ( strpos($url,'/'.BP_REGISTER_SLUG) !== false ) 
-			return $this->sitepress->convert_url($url);
-		else return $url;
-	}
-
-	function filter_url( $url, $blog_id = false, $code = null ){
-		if(is_null($code)){ $code = $this->this_lang; }
-		if($code && $code != $this->sitepress->get_default_language()){
-			if (!$blog_id) $blog_id = $this->blog->blog_id;
-			//$abshome = preg_replace('@\?lang=' . $code . '@i','',get_option('home'));
-			else $abshome = preg_replace('@\?lang=' . $code . '@i','',get_blog_option($blog_id,'siteurl'));
-			switch($this->settings['language_negotiation_type']){
-				case '1':
-					if($abshome==$url) $url .= '/';
-					$url = str_replace($abshome, $abshome . '/' . $code, $url);
-					break;
-				case '2':
-					$url = str_replace($abshome, $this->settings['language_domains'][$code], $url);
-					break;
-				case '3':
-				default:
-					if ( false === strpos($url,'?') ) $url_glue = '?';
-					else $url_glue = '&';
-					$url .= $url_glue . 'lang=' . $code;
-			}
-		}
-		return $this->check_doubles($url);
-	}
-
-	function filter_blog_url( $url, $trim = false, $code = null ) {
-		if(is_null($code)){ $code = $this->this_lang; }
-		if($code && $code == $this->sitepress->get_default_language()) {
-			if ($trim) return $this->check_doubles(rtrim($url,'/'));
-			else return $this->check_doubles($url);
-		}
-		switch($this->settings['language_negotiation_type']){
-			case 1:
-				$url = rtrim($url,'/').'/'.$this->lang.'/';
-				break;
-			case 2:
-				// not enabled
-				break;
-			case 3:
-			default:
-			$url = $this->sitepress->convert_url($url);
-		}
-		if ($trim) return rtrim($this->check_doubles($url),'/');
-		else return $this->check_doubles($url);
-	}
-
-
 	function filter_hrefs( $string = '' ){
 		if (is_object($args)) return $args;
 		return preg_replace_callback('/href=["\'](.+?)["\']/',array(&$this,'filter_matches'),$string);
 	}
 
 	function filter_matches( $match = array() ){
-		return str_replace($match[1],$this->filter_url($match[1]),$match[0]);
+		return str_replace($match[1],$this->option_siteurl($match[1]),$match[0]);
 	}
 
 	function convert_title_url($args){
 		return $this->check_doubles($args);
 	}
 
-	function comment_post_redirect($args){
+	function redirect($args){
 		$this->redirect_lang();
-		return ($this->sitepress->convert_url($args,$this->this_lang));
+		return ($this->option_siteurl($args));
 	}
 
 	function redirect_lang() {
-		$al = $this->sitepress->get_active_languages();
+		$al = $this->active_langs;
 		foreach($al as $l){ $active_languages[] = $l['code']; }
 		$request = $_SERVER['HTTP_REFERER'];
-		$home = get_blog_option($this->blog->blog_id,'siteurl');
+		$home = $this->siteurl;
 		$url_parts = parse_url($home);
 		$blog_path = $url_parts['path']?$url_parts['path']:'';
 		if ($this->settings['language_negotiation_type'] == 1) {
@@ -227,8 +242,8 @@ class SitePressBp {
 			$parts = explode('?', $path);
 			$path = $parts[0];
 			$exp = explode('/',trim($path,'/'));
-			if (in_array($exp[0], $active_languages)) $this->this_lang = $exp[0];
-			else $this->this_lang = $this->get_default_language();
+			if (in_array($exp[0], $active_languages)) $this->lang = $exp[0];
+			else $this->lang = $this->default_lang;
 		}
 	}
 
@@ -246,30 +261,53 @@ class SitePressBp {
 		else return $uri;
 	}
 
-	function filter_catbase($args){}
-
 	function filter_wp_logout_url($url,$redirect) {
-		return str_replace(urlencode($redirect),urlencode(get_blog_option($this->blog->blog_id,'siteurl')),$url);
+		return str_replace(urlencode($redirect),urlencode($this->siteurl_new),$url);
 	}
 
 	function filter_search_redirection($args){
 		if ($this->settings['language_negotiation_type'] == 1)
-			return rtrim($this->sitepress->convert_url($args),'/'.$this->lang.'/');
+			return $this->option_siteurl($args);
 		else return $args;
 	}
 
 	function remove_lang($args){
-		switch($this->settings['language_negotiation_type']){
-                    case 1:
-						$link = str_replace($this->lang.'/','',$args);
-                        break;
-                    case 2:
-						// not enabled
-                        break;
-                    case 3:
-                    default:
-		}
+		if ( $this->settings['language_negotiation_type'] == 1 ) 
+			$link = str_replace($this->lang.'/','',$args);
 		return $link;
+	}
+
+	function check_main_to_subblog() {
+		if ( $this->settings['language_negotiation_type'] != 1 
+			&& $_SERVER['HTTP_REFERER']
+			&& strpos($_SERVER['HTTP_REFERER'],$this->home_blog) === false ) return;
+			
+			$url_lang = $this->get_url_lang();
+			$is_lang = $this->is_lang($lang);
+			if ( $is_lang != false && !array_key_exists($url_lang,$this->active_langs ) ) {
+				$redirect = 'http'.$this->https.'://'.$_SERVER['HTTP_HOST'] . '/' . str_replace('/'.$url_lang, '', ltrim($_SERVER['REQUEST_URI'],'/') );
+				header('Location: '.$redirect.'' );
+				exit;
+			}
+	}
+
+	function get_url_lang(){
+		$url_lang = explode($this->siteurl,'http'.$this->https.'://'.$_SERVER['HTTP_HOST']. $_SERVER['REQUEST_URI']);
+		$url_lang = explode('/',$url_lang[1]);
+		return $url_lang[1];
+	}
+
+	function is_lang($lang) {
+		global $wpdb;
+		return $wpdb->get_results("SELECT code FROM wp_".BP_ROOT_BLOG."_icl_languages WHERE code = '{$lang}'", ARRAY_A);
+	}
+
+	function link_to_page($lang){
+		if ($this->default_lang == $lang) {
+			return 'http' . $this->https . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		} else {
+			return $this->option_siteurl('http'.$this->https.'://'.$_SERVER['HTTP_HOST']. $_SERVER['REQUEST_URI'],$lang);
+		}
 	}
 
 	function translate_widgets () {
@@ -281,29 +319,32 @@ class SitePressBp {
 		}
 	}
 
-	function this_post_is_available($args=''){
-    	parse_str($args);
+	function content($str){
+    	return '<div class="wpml-post-aviability">'.$this->this_post_is_available().'</div>'.$str;
+	}
+
+	function this_post_is_available($args='before=1'){
+		if ( count($this->active_langs) < 2 ) return;
+		global $wpdb,$post,$sitepress;
+		$trid = $wpdb->get_var("SELECT trid FROM {$wpdb->prefix}icl_translations WHERE element_id='{$post->ID}' AND element_type='post'");
+		$translations = $sitepress->get_element_translations($trid,'post');
+		parse_str($args);
 		$echo = '';
-    	if(function_exists('icl_get_languages')){
-        	$languages = icl_get_languages('skip_missing=1');
-        	if(1 < count($languages)){
-            	$echo .= isset($before) ? $before : __('This post is also available in: ','sitepress');
-            	foreach($languages as $l){
-                	if(!$l['active']) $langs[] = '<a href="'.$l['url'].'">'.$l['translated_name'].'</a>';
-            	}
-            	$echo .= join(', ', $langs);
-            	$echo .= isset($after) ? $after : '';
-        	}
-    	}
+		if ($before) $echo .= __('This post is also available in: ','sitepress');
+		foreach ($translations as $t) {
+			if ( $this->lang == $t->language_code || !array_key_exists( $t->language_code, $this->active_langs ) ) continue;
+			$echo .= '<a href="'.get_permalink($translations[$t->language_code]->element_id) .'">' .  $sitepress->get_display_language_name($t->language_code, $this->lang) . '</a>';
+		}
+		if ($after) $echo .= $after;
 		return $echo;
 	}
 
 
 	function adminbar_lang_switcher_menu() {
+		do_action('switch_blog_back');
 			// ie ver ???
-		if (is_admin()) return;
-		global $sitepress;
-		$settings = get_option('icl_sitepress_settings');
+		if (defined('WP_ADMIN')) return;
+		$settings = $this->settings;
 		 $active_languages = icl_get_languages('skip_missing=0');
 		 if (count($active_languages) < 2) return;
 		 foreach($active_languages as $k=>$al){
@@ -315,7 +356,7 @@ class SitePressBp {
         }
 		echo '
 		<style>#wp-admin-bar .iclflag { position: relative; left: -1px; top: 1px; }</style>
-        <li><a href="#" class="lang_sel_sel icl-'.$w_this_lang['code'].'">';
+        <li><a href="'.$this->siteurl_new.'" class="lang_sel_sel icl-'.$w_this_lang['code'].'">';
             if($settings['icl_lso_flags']):
             	echo '<img class="iclflag" src="'.$main_language['country_flag_url'].'" alt="'.$main_language['language_code'].'" width="18" height="12" />&nbsp;'; endif; 
             echo icl_disp_language($settings['icl_lso_native_lang']?$main_language['native_name']:null, $settings['icl_lso_display_lang']?$main_language['translated_name']:null);
@@ -324,12 +365,15 @@ class SitePressBp {
             	if(isset($ie_ver) && $ie_ver <= 6): print '<table><tr><td>'; endif;
             echo '<ul>';
 				$counter = 0;
+				
                 foreach($active_languages as $lang):
 					
                 	echo '<li class="icl-'.$lang['language_code']; 
 				 	echo ( 0 == $counter % 2 ) ? ' alt' : '';
 					echo '">
-                    <a href="'.$lang['url'].'">';
+                    <a href="';
+					echo $this->link_to_page($lang['language_code']);
+					echo '">';
                     if($settings['icl_lso_flags']):
                     	echo '<img class="iclflag" src="'.$lang['country_flag_url'].'" alt="'.$lang['language_code'].'" width="18" height="12" />&nbsp;';
                     endif;
@@ -344,7 +388,48 @@ class SitePressBp {
         echo '</li>';
     }
 
-	function adminbar_blogs_menu() {
+	function footer_switcher( $skip_missing=0, $div_id = "footer_language_list" ) {
+		if(function_exists('icl_get_languages')){
+			$languages = icl_get_languages('skip_missing='.intval($skip_missing));
+			if(!empty($languages)){
+				echo '<div id="'.$div_id.'"><ul>';
+				foreach($languages as $l){
+					echo '<li>';
+					if(!$l['active']) echo '<a href="'.$this->link_to_page($l['language_code']).'">';
+					echo '<img src="'.$l['country_flag_url'].'" alt="'.$l['language_code'].'" width="18" height="12" />';
+					if(!$l['active']) echo '</a>';
+					if(!$l['active']) echo '<a href="'.$this->link_to_page($l['language_code']).'">';
+					echo $l['native_name'];
+					//if(!$l['active']) echo ' ('.$l['translated_name'].')';
+					if(!$l['active']) echo '</a>';
+					echo '</li>';
+				}
+			echo '</ul></div>';
+			}
+		}
+	}
+
+	function stylesheet() {
+		$file = get_template_directory_uri() . '/bp-multilingual.css';
+		wp_register_style('bpml', $file);
+		wp_enqueue_style('bpml');
+		if (!file_exists($file)) {
+			$file = $this->relpath . '/bp-multilingual.css';
+			wp_register_style('bpml-override', $file);
+			wp_enqueue_style('bpml-override');
+		}
+	}
+
+	function footer() {
+		//global $wp_query;
+		//print_r($wp_query);
+		//global $bp;
+		//echo '<pre>';print_r($bp);echo'</pre>';
+		//echo '<a href="http://wpmu.localhost/wpmu/test/pt-br">test</a>';
+		$this->footer_switcher();
+	}
+
+	/*function adminbar_blogs_menu() {
 		if ( is_user_logged_in() ) {
 			global $bp; 
 	
@@ -397,37 +482,7 @@ class SitePressBp {
 			echo '</li>';
 			}
 		}
-	}
-
-	function footer_switcher($skip_missing=0, $div_id = "footer_language_list"){
-		if(function_exists('icl_get_languages')){
-			$languages = icl_get_languages('skip_missing='.intval($skip_missing));
-			if(!empty($languages)){
-				echo '<div id="'.$div_id.'"><ul>';
-				foreach($languages as $l){
-					echo '<li>';
-					if(!$l['active']) echo '<a href="'.$l['url'].'">';
-					echo '<img src="'.$l['country_flag_url'].'" alt="'.$l['language_code'].'" width="18" height="12" />';
-					if(!$l['active']) echo '</a>';
-					if(!$l['active']) echo '<a href="'.$l['url'].'">';
-					echo $l['native_name'];
-					//if(!$l['active']) echo ' ('.$l['translated_name'].')';
-					if(!$l['active']) echo '</a>';
-					echo '</li>';
-				}
-			echo '</ul></div>';
-			}
-		}
-	}
-
-	function footer() {
-		//$this->footer_switcher();
-		//echo '<div id="footer_language_list">' . wpml_languages_list() . '</div>';
-	}
-
-	function content($str){
-    	return '<div class="wpml-post-aviability">'.$this->this_post_is_available().'</div>'.$str;
-	}
+	}*/
 
 	/*	function filter_bp_nav() {
 			// This function will probably filter all added custom navs
@@ -445,25 +500,8 @@ class SitePressBp {
 			}
 		}
 	}*/
-
-	/*	function filter_logout_link ( $string ) {
-		return preg_replace_callback('/redirect_to=(.+?)(&)/',array(&$this,'filter_logout'),$string);
-	}
-
-	function filter_logout( $match = array() ){
-		return str_replace($match[1],$this->filter_blog_url($match[1]),$match[0]);
-	}*/
-
 }
 
 
 	global $sitepress_bp;
 	$sitepress_bp = new SitePressBp();
-
-
-
-		// Template main navigation wrapper
-	function wpmlbp_get_bp_url($link) {
-		global $current_blog;
-		return get_blog_option($current_blog->blog_id,'siteurl').ltrim($link,'/');
-	}
