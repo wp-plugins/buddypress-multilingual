@@ -32,6 +32,9 @@ Currently working with BuddyPress 1.0.3, but we're looking forward to adapt it t
 
 == Changelog ==
 
+= 0.9.2 =
+* Bugfixes
+
 = 0.9.1 =
 * Bugfixes
 
