@@ -5,7 +5,7 @@ Plugin URI: http://wpml.org/wordpress-translation/buddypress-multilingual/
 Description: BuddyPress Multilingual. <a href="http://wpml.org/wordpress-translation/buddypress-multilingual/">Documentation</a>.
 Author: OnTheGoSystems
 Author URI: http://www.onthegosystems.com
-Version: 0.9
+Version: 0.9.1
 Site Wide only: true
 */
 
