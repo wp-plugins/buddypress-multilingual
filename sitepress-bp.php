@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: BuddyPress Multilingual
-Plugin URI: http://wpml.org/wordpress-translation/buddypress-multilingual/
-Description: BuddyPress Multilingual. <a href="http://wpml.org/wordpress-translation/buddypress-multilingual/">Documentation</a>.
+Plugin URI: http://wpml.org/?page_id=2890
+Description: BuddyPress Multilingual. <a href="http://wpml.org/?page_id=2890">Documentation</a>.
 Author: OnTheGoSystems
 Author URI: http://www.onthegosystems.com
 Version: 0.9.2
