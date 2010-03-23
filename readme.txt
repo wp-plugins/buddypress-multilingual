@@ -1,6 +1,6 @@
 === Plugin Name ===
 Contributors: ICanLocalize, jozik
-Donate link: http://wpml.org/home/want-to-help/
+Donate link: http://wpml.org/?page_id=2312
 Tags: i18n, translation, localization, language, multilingual, WPML, BuddyPress
 Requires at least: 2.8.4
 Tested up to: 2.9.2
