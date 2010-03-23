@@ -400,7 +400,7 @@ class SitePressBp {
         wp_register_style('bpml', $file);
         wp_enqueue_style('bpml');
         $file = get_template_directory_uri() . '/bp-multilingual.css';
-        if (!file_exists($file)) {
+        if (file_exists($file)) {
             wp_register_style('bpml-override', $file);
             wp_enqueue_style('bpml-override');
         }
