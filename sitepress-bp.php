@@ -88,7 +88,7 @@ class SitePressBp {
         
         $blogs  = get_blog_list( 0, 'all' );
         foreach ($blogs as $k => $v) {
-            if ($v['blog_id'] == BP_ROOT_BLOG ) {
+            if ($v['blog_id'] == BP_ROOT_BLOG) {
                 $this->home_blog = rtrim('http' . $this->https . '://' . $v['domain'] . $v['path'], '/');
             } else if ($this->siteurl.'/' != 'http' . $this->https . '://' . $v['domain'] . $v['path']) {
                 $this->blogs_search[] = rtrim('http' . $this->https . '://' . $v['domain'] . $v['path'], '/');
