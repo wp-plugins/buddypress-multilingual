@@ -5,7 +5,7 @@ Plugin URI: http://wpml.org/?page_id=2890
 Description: BuddyPress Multilingual. <a href="http://wpml.org/?page_id=2890">Documentation</a>.
 Author: OnTheGoSystems
 Author URI: http://www.onthegosystems.com
-Version: 0.9.2
+Version: 1.0.0
 Site Wide only: true
 */
 
