@@ -23,7 +23,7 @@ add_filter('bp_activity_content_filter', array(&$this, 'filter_hrefs'));
 // my blogs
 //add_filter('bp_get_blog_permalink', array(&$this, 'option_siteurl'));
 
-	// ? Can't be used. BP writes a lot to DB.
+	// ? Can't be used.
 //add_filter('bp_core_get_userlink', array(&$this, 'filter_hrefs'));
 //add_filter('bp_core_get_userlink_by_username', array(&$this, 'filter_hrefs'));
 //add_filter('bp_core_get_userlink_by_email', array(&$this, 'filter_hrefs'));

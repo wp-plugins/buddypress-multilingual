@@ -149,7 +149,6 @@ class SitePressBp {
             // This checks if we link from main blog to subblog with unactive lang;
         //$this->check_main_to_subblog();
         
-        //if (isset($_GET['hooks'])) include WPMLBP_PLUGIN_DIR . '/hooks.class.php';
         include $this->abspath . '/hooks.php';
     }
 
@@ -162,7 +161,6 @@ class SitePressBp {
 
     function ajax_lang($lang) {
         global $sitepress;
-        //echo $lang; echo $sitepress->get_language_cookie();
         return $sitepress->get_language_cookie();
     }
 
@@ -269,22 +267,22 @@ class SitePressBp {
 
     function translate($str, $echo = false) {
         if ($echo) {
-            _e($str,'buddypress');
+            _e($str, 'buddypress');
         } else {
-            return __($str,'buddypress');
+            return __($str, 'buddypress');
         }
     }
 
-    function filter_hrefs($string = '' ) {
+    function filter_hrefs($string = '') {
             // REVIEW
         /*if (is_object($args)) {
             return $args;
         }*/
-        return preg_replace_callback('/href=["\'](.+?)["\']/',array(&$this,'filter_matches'),$string);
+        return preg_replace_callback('/href=["\'](.+?)["\']/', array(&$this,'filter_matches'), $string);
     }
 
     function filter_matches($match = array()) {
-        return str_replace($match[1],$this->option_siteurl($match[1]),$match[0]);
+        return str_replace($match[1], $this->option_siteurl($match[1]), $match[0]);
     }
 
     function convert_title_url($args) {
