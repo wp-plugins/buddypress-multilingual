@@ -327,7 +327,9 @@ class SitePressBp {
 
     function filter_bp_uri($uri) {
         if ($this->settings['language_negotiation_type'] == 1) {
-            return str_replace($this->lang . '/', '', $uri);
+   					//return substr_replace($uri, '/', 1, 3); 
+						//return preg_replace('/' . $this->lang . '\//', '', $uri, 1);
+            return str_replace('/' . $this->lang . '/', '/', $uri);
         } else {
             return $uri;
         }
@@ -380,9 +382,9 @@ class SitePressBp {
 
     function link_to_page($lang){
         if ($this->default_lang == $lang) {
-            return 'http' . $this->https . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+            return str_replace('/' . $this->lang, '', 'http' . $this->https . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
         } else {
-            return $this->option_siteurl('http' . $this->https . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], $lang);
+            return $this->option_siteurl(str_replace('/' . $this->lang, '', 'http' . $this->https . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']), $lang);
         }
     }
 

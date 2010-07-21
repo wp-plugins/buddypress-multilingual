@@ -32,3 +32,11 @@ add_filter('bp_activity_content_filter', array(&$this, 'filter_hrefs'));
 add_filter('bp_get_activity_action', array(&$this, 'filter_member_link'));
 	// No can do.
 //add_filter('bp_get_the_profile_field_value', array(&$this, 'filter_member_link_profile_loop'), 0, 3);
+
+add_filter('bp_get_the_profile_field_name', array(&$this, 'translate'));
+
+// TODO
+//bp_get_activity_pagination_links
+//bp_get_blogs_pagination_links
+//bp_get_groups_pagination_links
+//bp_get_messages_pagination
