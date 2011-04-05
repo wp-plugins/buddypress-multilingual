@@ -51,7 +51,7 @@ For example, /fr/members/ to the French members list.
 == Changelog ==
 
 = 1.0.1 =
-* Supports BuddyPress 1.2.8 and WP Network mode
+* Supports BuddyPress 1.2.8 and Wordpress Network mode
 * Added Google translation and translation control for BuddyPress activities
 
 = 1.0.0 =
