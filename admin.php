@@ -253,7 +253,7 @@ function bpml_admin_show_stored_admin_notices() {
         return '';
     }
     foreach ($messages as $message) {
-        bpml_admin_message($message);
+        bpml_admin_message($message, 'updated', 'all_admin_notices');
     }
 }
 

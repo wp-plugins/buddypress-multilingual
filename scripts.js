@@ -47,6 +47,33 @@ jQuery(document).ready(function() {
         });
         return false;
     });
+    jQuery('.bpml-form-ajax').live('submit', function(){
+        var form = jQuery(this);
+        jQuery.ajax({
+            url: jQuery(this).attr('action'),
+            type: 'post',
+            data: jQuery(this).serialize(jQuery(this))+'&action=bpml_ajax',
+            dataType: 'json',
+            cache: false,
+            beforeSend: function(){
+                form.children('.bmp-ajax-update').html('Processing...').show();
+            },
+            success: function(data){
+                if (data.output != 'undefined') {
+                    form.children('.bmp-ajax-update').html(data.output).delay(2000).fadeOut();
+                } else if (data.error != 'undefined') {
+                    form.children('.bmp-ajax-update').html(data.error).delay(2000).fadeOut();
+                }
+            },
+            error: function() {
+            }
+        });
+        return false;
+    });
+    jQuery('.bpml_profiles_translate_with_google').click(function() {
+        jQuery(this).parent().find('textarea').val(jQuery(this).parent().find('.bpml_profiles_translate_field_google_translated').val());
+        return false;
+    });
 });
 
 function bpmlAdminToggleCollectedActivities() {

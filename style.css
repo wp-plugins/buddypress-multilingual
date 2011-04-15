@@ -64,6 +64,9 @@
     border: 1px solid #cccccc;
     padding: 10px 25px;
 }
+.bpml-admin-form h4 {
+    margin: 10px 0 5px 0;
+}
 #bpml-collected-activities {
     display: none;
 }
@@ -89,4 +92,7 @@ ul.item-list li.bpml-activity-assign-language-wrapper {
 }
 .bpml-activity-assign-language-wrapper form {
     margin: 0;
+}
+.bpml-profiles-field-toggle-button {
+    margin-bottom: 5px;
 }

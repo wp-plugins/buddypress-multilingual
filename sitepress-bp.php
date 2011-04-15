@@ -43,6 +43,7 @@ function bpml_init_check() {
                 && is_main_site()) {
             bpml_admin_message('<p>' . __('For BuddyPress Multilingual to work you must set WPML language negotiation to "languages in different directories".') . '</p>');
         } else {
+
             global $bpml;
             $bpml = bpml_get_settings();
             define('BPML_DEBUG', bpml_get_setting('debug', 0));
@@ -53,6 +54,20 @@ function bpml_init_check() {
 
             // Main blog
             if (is_main_site ()) {
+                // Profiles
+                if ($bpml['profiles']['translation'] != 'no') {
+                    require_once dirname(__FILE__) . '/profiles.php';
+                    add_filter('bpml_default_settings', 'bpml_profiles_bpml_default_settings_filter');
+                    add_action('init', 'bpml_profiles_init');
+                    add_action('bpml_settings_form_before', 'bpml_profiles_admin_form');
+                    add_filter('bp_get_the_profile_field_value', 'bpml_profiles_bp_get_the_profile_field_value_filter', 0, 3);
+//add_action('bp_custom_profile_edit_fields', 'bpml_profiles_bp_custom_profile_edit_fields_hook');
+                    add_action('bp_after_profile_edit_content', 'bpml_profiles_bp_after_profile_edit_content_hook');
+                    add_action('bpml_ajax', 'bpml_profiles_ajax');
+// delete field, update field
+//add_filter('bp_get_the_site_member_profile_data', 'bpml_profiles_test');
+                }
+
                 if (!is_admin()) {
                     require_once dirname(__FILE__) . '/frontend.php';
                     add_action('wp_head', 'bpml_wp_head_hook');
