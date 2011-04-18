@@ -13,13 +13,31 @@ function bpml_test($a = '') {
 }
 
 /**
+ * Before BP header hook.
+ *
+ * Activate site_url() filter.
+ */
+function bpml_bp_before_header_hook() {
+    add_filter('site_url', 'bpml_site_url_filter', 0);
+}
+
+/**
+ * After BP footer hook.
+ *
+ * Remove site_url() filter.
+ */
+function bpml_bp_after_footer_hook() {
+    remove_filter('site_url', 'bpml_site_url_filter', 0);
+}
+
+/**
  * Filters site_url() calls.
  *
  * @global  $sitepress
  * @param <type> $url
  * @return <type>
  */
-function bpml_site_url_filter($url) {
+function bpml_site_url_filter($url, $path = '') {
     global $sitepress;
     return rtrim($sitepress->convert_url($url), '/');
 }

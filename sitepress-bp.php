@@ -30,6 +30,41 @@
 define('BPML_VERSION', '1.0.1');
 define('BPML_PLUGIN_URL', plugins_url(basename(dirname(__FILE__))));
 
+add_action('plugins_loaded', 'bpml_plugins_loaded_hook', 0);
+add_action('plugins_loaded', 'bpml_init_check', 11);
+
+/**
+ * Trigger this before anything.
+ *
+ * Force getting cookie language on:
+ * Search
+ * AJAX call
+ */
+function bpml_plugins_loaded_hook() {
+    if (defined('BP_VERSION') && defined('ICL_SITEPRESS_VERSION')) {
+        if (!is_admin() && (isset($_POST['search-terms']) || isset($_REQUEST['action'])
+                || (defined('DOING_AJAX') && DOING_AJAX))) {
+            add_filter('icl_set_current_language', 'bpml_get_cookie_lang');
+        }
+    }
+}
+
+/**
+ * Returns WPML cookie.
+ * 
+ * @global  $sitepress
+ * @param <type> $lang
+ * @return <type>
+ */
+function bpml_get_cookie_lang($lang = '') {
+    global $sitepress;
+    $lang_cookie = $sitepress->get_language_cookie();
+    if (empty($lang_cookie)) {
+        return empty($lang)? ICL_LANGUAGE_CODE : $lang;
+    }
+    return $lang_cookie;
+}
+
 /**
  * Checks if necessary conditions are met.
  * 
@@ -55,17 +90,16 @@ function bpml_init_check() {
             // Main blog
             if (is_main_site ()) {
                 // Profiles
-                if ($bpml['profiles']['translation'] != 'no') {
+                if (isset($bpml['profiles']) && $bpml['profiles']['translation'] != 'no') {
                     require_once dirname(__FILE__) . '/profiles.php';
-                    add_filter('bpml_default_settings', 'bpml_profiles_bpml_default_settings_filter');
+                    if (!is_admin() && isset($bpml['profiles']['translate_fields_title'])) {
+                        add_filter('bp_get_the_profile_field_name', 'bpml_bp_get_the_profile_field_name_filter');
+                    }
+                    add_action('xprofile_data_before_save', 'bpml_xprofile_data_before_save_hook');
                     add_action('init', 'bpml_profiles_init');
-                    add_action('bpml_settings_form_before', 'bpml_profiles_admin_form');
-                    add_filter('bp_get_the_profile_field_value', 'bpml_profiles_bp_get_the_profile_field_value_filter', 0, 3);
-//add_action('bp_custom_profile_edit_fields', 'bpml_profiles_bp_custom_profile_edit_fields_hook');
                     add_action('bp_after_profile_edit_content', 'bpml_profiles_bp_after_profile_edit_content_hook');
                     add_action('bpml_ajax', 'bpml_profiles_ajax');
-// delete field, update field
-//add_filter('bp_get_the_site_member_profile_data', 'bpml_profiles_test');
+                    add_filter('bp_get_the_profile_field_value', 'bpml_profiles_bp_get_the_profile_field_value_filter', 0, 3);
                 }
 
                 if (!is_admin()) {
@@ -74,14 +108,27 @@ function bpml_init_check() {
                     add_action('wp_footer', 'bpml_wp_footer', 9999);
                     add_action('wp', 'bpml_blogs_redirect_to_random_blog', 0);
                     add_action('bp_before_activity_loop', 'bpml_activities_bp_before_activity_loop_hook');
+//                    add_action('template_notices', 'bpml_show_frontend_notices', 9);
+                    add_action('bp_core_render_message', 'bpml_show_frontend_notices');
+
+                    // Filter site_url on regular pages
+                    add_action('bp_before_header', 'bpml_bp_before_header_hook');
+                    add_action('bp_after_footer', 'bpml_bp_after_footer_hook');
+
+                    // Force filtering site_url on:
+                    // Search
+                    // AJAX call
+                    if (isset($_POST['search-terms']) || isset($_REQUEST['action']) || (defined('DOING_AJAX') && DOING_AJAX)) {
+                        add_filter('site_url', 'bpml_site_url_filter', 0);
+                    }
 
                     add_filter('admin_url', 'bpml_admin_url_filter', 0, 3);
-                    add_filter('site_url', 'bpml_site_url_filter', 0);
                     add_filter('bp_core_get_root_domain', 'bpml_bp_core_get_root_domain_filter', 0);
                     add_filter('bp_uri', 'bpml_bp_uri_filter', 0);
                     add_filter('icl_ls_languages', 'bpml_icl_ls_languages_filter');
                     add_filter('bp_activity_get', 'bpml_activities_bp_activity_get_filter', 10, 2);
                     add_filter('bp_activity_get_specific', 'bpml_activities_bp_activity_get_filter', 10, 2);
+                    add_filter('bp_get_activity_latest_update_excerpt', 'bpml_bp_get_activity_latest_update_excerpt_filter');
 
                     if ($bpml['activities']['show_activity_switcher']) {
                         add_action('bp_before_activity_entry', 'bpml_activities_assign_language_dropdown');
@@ -102,6 +149,8 @@ function bpml_init_check() {
                     add_action('admin_init', 'bpml_admin_show_stored_admin_notices');
                     add_action('admin_menu', 'bpml_admin_menu');
                     if (isset($_GET['page']) && $_GET['page'] == 'bpml') {
+                        require_once dirname(__FILE__) . '/admin-form.php';
+                        add_action('bpml_settings_form_before', 'bpml_profiles_admin_form');
                         add_action('admin_init', 'bpml_admin_save_settings_submit');
                         wp_enqueue_style('bpml', BPML_PLUGIN_URL . '/style.css', array(), BPML_VERSION);
                         wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
@@ -116,8 +165,6 @@ function bpml_init_check() {
     }
 }
 
-add_action('plugins_loaded', 'bpml_init_check', 11);
-
 /**
  * Returns HTML output for admin message.
  *
@@ -125,8 +172,9 @@ add_action('plugins_loaded', 'bpml_init_check', 11);
  * @param <type> $class
  * @return <type>
  */
-function bpml_message($message, $class = 'updated') {
-    return '<div class="message ' . $class . '">' . $message . '</div>';
+function bpml_message($message, $class = 'updated', $ID = NULL) {
+    $ID = is_null($ID) ? '' : ' id="' . $ID . '"';
+    return '<div class="message ' . $class . '"' . $ID . '>' . $message . '</div>';
 }
 
 /**
@@ -288,6 +336,47 @@ function bpml_store_admin_notice($ID, $message) {
     global $bpml;
     $bpml['admin_notices'][$ID] = $message;
     bpml_save_setting('admin_notices', $bpml['admin_notices']);
+}
+
+/**
+ * Caches frontend notices.
+ *
+ * @global array $bpml
+ * @param <type> $ID
+ * @param <type> $message
+ */
+function bpml_store_frontend_notice($ID, $message) {
+    global $bpml;
+    if (!isset($bpml['frontend_notices'])) {
+        $bpml['frontend_notices'] = array();
+    }
+    $bpml['frontend_notices'][$ID] = $message;
+    bpml_save_setting('frontend_notices', $bpml['frontend_notices']);
+}
+
+/**
+ * Displays frontend notices.
+ *
+ * @global array $bpml
+ * @param <type> $ID
+ * @param <type> $message
+ */
+function bpml_show_frontend_notices() {
+    global $bpml, $bp;
+    if (empty($bpml['frontend_notices'])) {
+        return '';
+    }
+//    if (empty($bp->template_message)) {
+//        $bp->template_message = '';
+//        $bp->template_message_type = 'success';
+//    } else {
+//        $bp->template_message .= '&nbsp;';
+//    }
+    foreach ($bpml['frontend_notices'] as $message) {
+        echo bpml_message('<p>' . $message . '</p>', 'bpml-frontend-notice');
+//        $bp->template_message .= $message . '&nbsp;';
+    }
+    bpml_delete_setting('frontend_notices');
 }
 
 /**

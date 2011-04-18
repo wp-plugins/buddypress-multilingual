@@ -1,29 +1,31 @@
 <?php
 /*
  * Profile functions
- * @todo Register strings from field names
- * @todo global turn off
- * @todo separate admin/frontend
- * @todo see bpml registered and apply_filters
+ * @todo delete field hook NO HOOK
  */
 
+/**
+ * Init hook.
+ */
 function bpml_profiles_init() {
     if (!get_option('bpml_xprofile_installed', FALSE)) {
         bpml_profiles_install();
     }
-//    global $bp;
-//    $profile_link = $bp->loggedin_user->domain . $bp->profile->slug . '/';
-//    bp_core_new_subnav_item( array( 'name' => __( 'Translate Profile', 'buddypress' ), 'slug' => 'bpml-translate', 'parent_url' => $profile_link, 'parent_slug' => $bp->profile->slug, 'screen_function' => 'bpml_xprofile_screen_edit_profile', 'position' => 20 ) );
 }
 
+/**
+ * Adds translation options on 'Edit Profile' page.
+ * 
+ * @global <type> $bp
+ * @global <type> $bpml
+ * @global <type> $sitepress
+ * @global boolean $bpml_profiles_field_value_suppress_filter
+ * @return <type>
+ */
 function bpml_profiles_bp_after_profile_edit_content_hook() {
     global $bp, $bpml, $sitepress, $bpml_profiles_field_value_suppress_filter;
     $bpml_profiles_field_value_suppress_filter = TRUE;
     require_once dirname(__FILE__) . '/google-translate.php';
-    if ($bpml['profiles']['translation'] != 'user'
-            && $bpml['profiles']['translation'] != 'user-missing') {
-        return '';
-    }
     $default_language = $sitepress->get_default_language();
     $langs = $sitepress->get_active_languages();
     $group = BP_XProfile_Group::get(array(
@@ -31,7 +33,7 @@ function bpml_profiles_bp_after_profile_edit_content_hook() {
                 'profile_group_id' => $bp->action_variables[1],
                 'fetch_field_data' => true
             ));
-    echo '<h4>Translate fields</h4>';
+    echo '<a name="bpml-translate-fields">&nbsp;</a><br /><h4>Translate fields</h4>';
     foreach ($group[0]->fields as $field) {
         if (!isset($bpml['profiles']['fields'][$field->id]) || empty($field->data->value)) {
             continue;
@@ -41,10 +43,8 @@ function bpml_profiles_bp_after_profile_edit_content_hook() {
             if ($lang['code'] == $default_language) {
                 continue;
             }
-//            echo '<button onclick="jQuery(\'#bpml-profiles-form-field-' . $field->id . '-' . $lang['code'] . '\').toggle();">' . $field->name . ' ' . $lang['english_name'] . '</button>';
-
             echo '<input class="bpml-profiles-field-toggle-button" type="button" onclick="jQuery(\'#bpml-profiles-form-field-' . $field->id . '-' . $lang['code'] . '\').toggle();" value="' . $lang['english_name'] . '" />';
-            echo '<form style="display:none;margin:0;" id="bpml-profiles-form-field-' . $field->id . '-' . $lang['code'] . '" class="bpml-form-ajax standard-form" method="post" action="' . admin_url() . '/admin-ajax.php">';
+            echo '<form style="display:none;margin:0;" id="bpml-profiles-form-field-' . $field->id . '-' . $lang['code'] . '" class="bpml-form-ajax standard-form" method="post" action="' . admin_url('admin-ajax.php') . '">';
             echo $field->type == 'textarea' ? '<textarea class="bpml-profiles-field-content" name="content" cols="40" rows="5">' . apply_filters('bp_get_the_profile_field_edit_value', bpml_profiles_get_field_translation($field->id, $lang['code'], $field->data->value)) . '</textarea>' : '<input type="text" class="bpml-profiles-field-content" name="content" value="' . apply_filters('bp_get_the_profile_field_edit_value', bpml_profiles_get_field_translation($field->id, $lang['code'], $field->data->value)) . '" />';
             echo '
                         <br />
@@ -52,19 +52,21 @@ function bpml_profiles_bp_after_profile_edit_content_hook() {
                     <input type="hidden" value="' . $lang['code'] . '" name="bpml_profiles_translate_field_lang" />
                     <input type="hidden" name="dummy" class="bpml_profiles_translate_field_google_translated" value="' . bpml_google_translate(apply_filters('bp_get_the_profile_field_edit_value', $field->data->value), $default_language, $lang['code']) . '" />
                     <input type="submit" value="Save translation" name="bpml_profiles_translate_field" />
-                    <input type="submit" value="Translate with Google" name="bpml_profiles_translate_with_google" class="bpml_profiles_translate_with_google" />
+                    <input type="submit" value="Get translation from Google" name="bpml_profiles_translate_with_google" class="bpml_profiles_translate_with_google" />
                     <div class="bmp-ajax-update"></div>
 </form><br />';
-//            $selected = $activities_template->activity->lang == $lang['code'] ? ' selected="selected"' : '';
-//            $data .= '<option value="' . $lang['code'] . '"' . $selected . '>' . $lang['english_name'] . '</option>';
         }
         echo '</div></div>';
     }
-//    echo '<pre>';print_r($group);
 }
 
+/**
+ * Processes AJAX call for updating field translation.
+ * 
+ * @global <type> $current_user
+ */
 function bpml_profiles_ajax() {
-    if (isset($_POST['bpml_profiles_translate_field'])) {
+    if (isset($_POST['bpml_profiles_translate_field']) && is_user_logged_in()) {
         global $current_user;
         $field_id = $_POST['bpml_profiles_translate_field'];
         $lang = $_POST['bpml_profiles_translate_field_lang'];
@@ -73,6 +75,15 @@ function bpml_profiles_ajax() {
     }
 }
 
+/**
+ * Updates field translation.
+ * 
+ * @global $wpdb $wpdb
+ * @param <type> $user_id
+ * @param <type> $field_id
+ * @param <type> $lang
+ * @param <type> $content
+ */
 function bpml_profile_update_translation($user_id, $field_id, $lang, $content) {
     global $wpdb;
     $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}bp_xprofile_data_bpml WHERE field_id=%d AND user_id=%d AND lang=%s", $field_id, $user_id, $lang));
@@ -96,33 +107,18 @@ function bpml_profile_update_translation($user_id, $field_id, $lang, $content) {
     }
 }
 
-function bpml_profiles_bp_custom_profile_edit_fields_hook() {
-    global $field, $bpml;
-    if (($bpml['profiles']['translation'] == 'user'
-            || $bpml['profiles']['translation'] == 'user-missing')
-            && isset($bpml['profiles']['fields'][$field->id])) {
-        global $sitepress;
-        $default_language = $sitepress->get_default_language();
-        $langs = $sitepress->get_active_languages();
-        $data = '';
-        foreach ($langs as $lang) {
-            if ($lang['code'] == $default_language) {
-                continue;
-            }
-            echo '<form class="bpml-form-ajax">
-                <textarea name="bpml[profiles][fields][' . $field->id . '][' . $lang['code'] . ']">' . apply_filters('bp_get_the_profile_field_edit_value', bpml_profiles_get_field_translation($field->id, $lang['code'], $field->data->value)) . '</textarea>
-                    <div class="bmp-ajax-update"></div>
-                    <input type="submit" />
-
-</form>';
-//            $selected = $activities_template->activity->lang == $lang['code'] ? ' selected="selected"' : '';
-//            $data .= '<option value="' . $lang['code'] . '"' . $selected . '>' . $lang['english_name'] . '</option>';
-        }
-        echo '<pre>';
-        print_r($field);
-    }
-}
-
+/**
+ * Fetches field translation.
+ *
+ * @global $wpdb $wpdb
+ * @global  $bpml
+ * @global  $sitepress
+ * @global boolean $bpml_profiles_field_value_suppress_filter
+ * @param <type> $field_id
+ * @param <type> $lang
+ * @param <type> $value
+ * @return <type>
+ */
 function bpml_profiles_get_field_translation($field_id, $lang, $value = '') {
     global $wpdb, $bpml, $sitepress, $bpml_profiles_field_value_suppress_filter;
     if ($sitepress->get_default_language() == $lang) {
@@ -134,7 +130,6 @@ function bpml_profiles_get_field_translation($field_id, $lang, $value = '') {
         if ($bpml['profiles']['translation']['user-missing'] && empty($bpml_profiles_field_value_suppress_filter)) {
             require_once dirname(__FILE__) . '/google-translate.php';
             $value = bpml_google_translate(apply_filters('bp_get_the_profile_field_edit_value', $value), $sitepress->get_default_language(), $lang);
-//            bpml_profile_update_translation($current_user->ID, $field_id, $lang, $_POST['content']);
             bpml_debug('Fetching Google translation for field: ' . $field_id);
         }
         return $value;
@@ -143,6 +138,17 @@ function bpml_profiles_get_field_translation($field_id, $lang, $value = '') {
     }
 }
 
+/**
+ * Profilae field value filter.
+ * 
+ * @global  $sitepress
+ * @global  $bpml
+ * @global boolean $bpml_profiles_field_value_suppress_filter
+ * @param <type> $value
+ * @param <type> $type
+ * @param <type> $field_id
+ * @return <type>
+ */
 function bpml_profiles_bp_get_the_profile_field_value_filter($value, $type,
         $field_id) {
     global $sitepress, $bpml, $bpml_profiles_field_value_suppress_filter;
@@ -157,54 +163,15 @@ function bpml_profiles_bp_get_the_profile_field_value_filter($value, $type,
     return $value;
 }
 
-function bpml_profiles_default_settings() {
-    return array(
-        'profiles' => array(
-            'translation' => 'no'
-        ),
-    );
-}
-
-function bpml_profiles_bpml_default_settings_filter($settings) {
-    return array_merge(bpml_profiles_default_settings(), $settings);
-}
-
-function bpml_profiles_admin_form() {
-    global $bpml;
-    echo '<h2>Profile fields</h2>';
-    // Use google translate (DB|JS), enable user to translate
-    echo '<label><input type="radio" name="bpml[profiles][translation]" value="no"' . (($bpml['profiles']['translation'] == 'no' || !isset($bpml['profiles']['translation'])) ? ' checked="checked"' : '') . ' />&nbsp;No translation</label>&nbsp;&nbsp;<br />';
-    echo '<label><input type="radio" name="bpml[profiles][translation]" value="user"' . ($bpml['profiles']['translation'] == 'user' ? ' checked="checked"' : '') . ' />&nbsp;Allow user to translate</label>&nbsp;&nbsp;<br />';
-    echo '<label><input type="radio" name="bpml[profiles][translation]" value="user-missing"' . ($bpml['profiles']['translation'] == 'user-missing' ? ' checked="checked"' : '') . ' />&nbsp;Allow user to translate but fill missing with Google translation</label>&nbsp;&nbsp;<br />';
-//    echo '<label><input type="radio" name="bpml[profiles][translation]" value="google-store"' . ($bpml['profiles']['translation'] == 'google-store' ? ' checked="checked"' : '') . ' />&nbsp;Google Translate store in DB</label>&nbsp;&nbsp;<br />';
-//    echo '<label><input type="radio" name="bpml[profiles][translation]" value="google-js"' . ($bpml['profiles']['translation'] == 'google-js' ? ' checked="checked"' : '') . ' />&nbsp;Google Translate JS</label>&nbsp;&nbsp;';
-
-    echo '<br /><br />';
-
-    echo 'Select fields that can be translated:';
-    // get fields
-    $groups = BP_XProfile_Group::get(array(
-                'fetch_fields' => true
-            ));
-    if (empty($groups)) {
-        echo 'No profile fields.';
-        return FALSE;
-    }
-
-    foreach ($groups as $group) {
-        if (empty($group->fields)) {
-            echo 'No fields in this group';
-            continue;
-        }
-        echo '<h4>' . $group->name . '</h4>';
-        foreach ($group->fields as $field) {
-            $checked = isset($bpml['profiles']['fields'][$field->id]) ? ' checked="checked"' : '';
-            echo '<label><input type="checkbox" name="bpml[profiles][fields][' . $field->id . ']" value="1"' . $checked . ' />&nbsp;' . $field->name . '</label>&nbsp;&nbsp;';
-        }
-    }
-//    echo '<pre>'; print_r($groups);
-    echo '<br /><br /><input type="submit" value="Save Settings" name="bpml_save_options" class="submit button-primary" />';
-    echo '<br /><br />';
+/**
+ * Notices user about changed fields.
+ * 
+ * @param <type> $field
+ */
+function bpml_xprofile_data_before_save_hook($field) {
+//    if ($field->exists()) {
+        bpml_store_frontend_notice('profile-field-updated', '<a href="#bpml-translate-fields">Check if fields need translation updated.</a>');
+//    }
 }
 
 /**
@@ -230,7 +197,36 @@ function bpml_profiles_install() {
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+        bpml_save_setting('profiles', array('translation' => 'no'));
     } else {
         update_option('bpml_xprofile_installed', 1);
     }
+}
+
+/**
+ * Translates field names.
+ * 
+ * @global  $sitepress
+ * @global <type> $field
+ * @staticvar array $cache
+ * @param <type> $name
+ * @return array
+ */
+function bpml_bp_get_the_profile_field_name_filter($name) {
+    global $sitepress, $field;
+    if ($sitepress->get_default_language() == ICL_LANGUAGE_CODE) {
+        return $name;
+    }
+    static $cache = NULL;
+    if (is_null($cache)) {
+        $cache = get_option('bpml_profile_fileds_names', array());
+    }
+    if (isset($cache[$field->id][ICL_LANGUAGE_CODE])) {
+        return $cache[$field->id][ICL_LANGUAGE_CODE];
+    }
+    require_once dirname(__FILE__) . '/google-translate.php';
+    $name = bpml_google_translate($name, $sitepress->get_default_language(), ICL_LANGUAGE_CODE);
+    $cache[$field->id][ICL_LANGUAGE_CODE] = $name;
+    update_option('bpml_profile_fileds_names', $cache);
+    return $name;
 }

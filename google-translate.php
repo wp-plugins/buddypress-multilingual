@@ -1,6 +1,7 @@
 <?php
 /*
  * Google translation functions
+ * @todo Auto detect
  */
 
 /**
@@ -29,7 +30,7 @@ function bpml_google_translate_activity_filter($result, $default_language,
     $to_translate_content = FALSE;
 
     if ((!empty($result->lang_recorded))) {
-        if ($result->lang_recorded != $current_language && $type_options['translate_title']){
+        if ($result->lang_recorded != $current_language && $type_options['translate_title']) {
             $to_translate_title = TRUE;
         }
     } else if ($result->lang != $current_language && $type_options['translate_title']) {
@@ -38,6 +39,12 @@ function bpml_google_translate_activity_filter($result, $default_language,
 
     if ($result->lang != $current_language && !empty($result->content) && $type_options['translate_content']) {
         $to_translate_content = TRUE;
+    }
+
+    // Apply display filters
+    $result->action = apply_filters('bp_get_activity_action', $result->action);
+    if (!empty($result->content)) {
+        $result->content = apply_filters('bp_get_activity_content_body', $result->content);
     }
 
     global $bpml;

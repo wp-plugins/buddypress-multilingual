@@ -96,3 +96,22 @@ ul.item-list li.bpml-activity-assign-language-wrapper {
 .bpml-profiles-field-toggle-button {
     margin-bottom: 5px;
 }
+div.bpml-frontend-notice p {
+    background: none repeat scroll 0 0 #DFFCD9;
+    color: #1A9B00;
+    display: block;
+    font-size: 12px;
+    padding: 10px 15px;
+    -moz-border-radius: 3px 3px 3px 3px;
+    border-bottom: 1px solid #C4E9BD;
+    border-right: 1px solid #C4E9BD;
+    font-weight: normal;
+    margin-top: 6px;
+    text-decoration: none;
+}
+div.bpml-frontend-notice {
+    clear: both;
+}
+div.bpml-frontend-notice {
+    margin: 15px 0;
+}

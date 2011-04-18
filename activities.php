@@ -1,6 +1,7 @@
 <?php
 /*
  * Functions for BP activities
+ * @todo latest-update
  */
 
 /**
@@ -280,4 +281,13 @@ function bpml_activities_ajax() {
         bpml_activities_clear_cache($ID, 'bpml_google_translation');
         echo json_encode(array('output' => 'Language assigned'));
     }
+}
+
+function bpml_bp_get_activity_latest_update_excerpt_filter($content) {
+    global $bpml;
+//    if ($bpml['activities']['enable_google_translation'] == 0) {
+//        return $content;
+//    }
+    require_once dirname(__FILE__) . '/google-translate.php';
+    return bpml_google_translate($content, '', ICL_LANGUAGE_CODE);
 }
