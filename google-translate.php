@@ -2,6 +2,7 @@
 /*
  * Google translation functions
  * @todo Auto detect
+ * @todo Activity loop and google translate button
  */
 
 /**
@@ -159,9 +160,9 @@ function bpml_google_translate($content, $from_language, $to_language) {
  */
 function bpml_google_translate_button($output = '') {
     global $bpml_google_translate_js, $bpml_in_activity_loop;
-    if (empty($bpml_in_activity_loop)) {
-        return '';
-    }
+//    if (empty($bpml_in_activity_loop)) {
+//        return '';
+//    }
     static $called = FALSE;
     if ($called) {
         return '';

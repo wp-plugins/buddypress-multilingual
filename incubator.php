@@ -14,7 +14,7 @@ if ($options['groups']['translate_name']) {
 }
 if ($options['groups']['translate_description']) {
     add_filter('bp_get_group_description', 'bpml_bp_get_group_description_filter', 9999);
-    add_filter('bp_get_group_description_excerpt', 'bpml_bp_get_group_description_filter', 9999);
+//    add_filter('bp_get_group_description_excerpt', 'bpml_bp_get_group_description_filter', 9999);
 }
 
 // Groups

@@ -1,7 +1,8 @@
 <?php
 /*
  * Functions for BP activities
- * @todo latest-update
+ * @todo Site wide widget
+ * @todo Activity loop and google translate button
  */
 
 /**
@@ -82,7 +83,8 @@ function bpml_activities_bp_activity_get_filter($activity, $r = NULL) {
             $cache[$result->id] = $activity['activities'][$key];
         }
     }
-    if (!empty($bpml_in_activity_loop) && function_exists('bpml_google_translate_button')) {
+//    if (!empty($bpml_in_activity_loop) && function_exists('bpml_google_translate_button')) {
+    if (function_exists('bpml_google_translate_button')) {
         echo bpml_google_translate_button();
     }
     $activity['total'] = count($activity['activities']);
@@ -283,11 +285,18 @@ function bpml_activities_ajax() {
     }
 }
 
-function bpml_bp_get_activity_latest_update_excerpt_filter($content) {
+/**
+ * Translates latest update on the fly.
+ * 
+ * @global <type> $bpml
+ * @param <type> $content
+ * @return <type>
+ */
+function bpml_bp_get_activity_latest_update_filter($content) {
     global $bpml;
-//    if ($bpml['activities']['enable_google_translation'] == 0) {
-//        return $content;
-//    }
+    if ($bpml['activities']['enable_google_translation'] === 0) {
+        return $content;
+    }
     require_once dirname(__FILE__) . '/google-translate.php';
     return bpml_google_translate($content, '', ICL_LANGUAGE_CODE);
 }

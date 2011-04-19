@@ -60,7 +60,7 @@ function bpml_get_cookie_lang($lang = '') {
     global $sitepress;
     $lang_cookie = $sitepress->get_language_cookie();
     if (empty($lang_cookie)) {
-        return empty($lang)? ICL_LANGUAGE_CODE : $lang;
+        return empty($lang) ? ICL_LANGUAGE_CODE : $lang;
     }
     return $lang_cookie;
 }
@@ -108,7 +108,6 @@ function bpml_init_check() {
                     add_action('wp_footer', 'bpml_wp_footer', 9999);
                     add_action('wp', 'bpml_blogs_redirect_to_random_blog', 0);
                     add_action('bp_before_activity_loop', 'bpml_activities_bp_before_activity_loop_hook');
-//                    add_action('template_notices', 'bpml_show_frontend_notices', 9);
                     add_action('bp_core_render_message', 'bpml_show_frontend_notices');
 
                     // Filter site_url on regular pages
@@ -128,7 +127,7 @@ function bpml_init_check() {
                     add_filter('icl_ls_languages', 'bpml_icl_ls_languages_filter');
                     add_filter('bp_activity_get', 'bpml_activities_bp_activity_get_filter', 10, 2);
                     add_filter('bp_activity_get_specific', 'bpml_activities_bp_activity_get_filter', 10, 2);
-                    add_filter('bp_get_activity_latest_update_excerpt', 'bpml_bp_get_activity_latest_update_excerpt_filter');
+                    add_filter('bp_get_activity_latest_update', 'bpml_bp_get_activity_latest_update_filter');
 
                     if ($bpml['activities']['show_activity_switcher']) {
                         add_action('bp_before_activity_entry', 'bpml_activities_assign_language_dropdown');
@@ -319,8 +318,10 @@ function bpml_save_setting($ID, $data) {
  */
 function bpml_delete_setting($ID) {
     global $bpml;
-    unset($bpml[$ID]);
-    update_option('bpml', $bpml);
+    if (isset($bpml[$ID])) {
+        unset($bpml[$ID]);
+        update_option('bpml', $bpml);
+    }
 }
 
 /**
@@ -362,19 +363,12 @@ function bpml_store_frontend_notice($ID, $message) {
  * @param <type> $message
  */
 function bpml_show_frontend_notices() {
-    global $bpml, $bp;
+    global $bpml;
     if (empty($bpml['frontend_notices'])) {
         return '';
     }
-//    if (empty($bp->template_message)) {
-//        $bp->template_message = '';
-//        $bp->template_message_type = 'success';
-//    } else {
-//        $bp->template_message .= '&nbsp;';
-//    }
     foreach ($bpml['frontend_notices'] as $message) {
         echo bpml_message('<p>' . $message . '</p>', 'bpml-frontend-notice');
-//        $bp->template_message .= $message . '&nbsp;';
     }
     bpml_delete_setting('frontend_notices');
 }

@@ -169,9 +169,7 @@ function bpml_profiles_bp_get_the_profile_field_value_filter($value, $type,
  * @param <type> $field
  */
 function bpml_xprofile_data_before_save_hook($field) {
-//    if ($field->exists()) {
-        bpml_store_frontend_notice('profile-field-updated', '<a href="#bpml-translate-fields">Check if fields need translation updated.</a>');
-//    }
+    bpml_store_frontend_notice('profile-field-updated', '<a href="#bpml-translate-fields">Check if fields need translation updated.</a>');
 }
 
 /**
