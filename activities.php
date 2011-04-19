@@ -1,8 +1,7 @@
 <?php
 /*
  * Functions for BP activities
- * @todo Site wide widget
- * @todo Activity loop and google translate button
+ * @todo Check activity loop and google translate button
  */
 
 /**

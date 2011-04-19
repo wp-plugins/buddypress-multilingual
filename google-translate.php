@@ -2,7 +2,7 @@
 /*
  * Google translation functions
  * @todo Auto detect
- * @todo Activity loop and google translate button
+ * @todo Check activity loop and google translate button
  */
 
 /**

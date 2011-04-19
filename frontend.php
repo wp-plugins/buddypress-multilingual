@@ -255,25 +255,3 @@ BuddyPress ';
     print_r($bp);
     echo '</pre></div>';
 }
-
-/**
- * Removes language from link.
- *
- * @todo add support for all links
- *
- * @param <type> $content
- * @param <type> $position
- */
-function bpml_remove_lang_from_link_position($content, $lang_from, $lang_to, $position = 0) {
-    preg_match_all('/href=["\'](.+?)["\']/', $content, $matches);echo '<pre>';print_r($matches);
-    if (isset($matches[$position])) {
-        global $bpml_filter_hrefs_lang, $bpml_filter_hrefs_lang_to;
-        $bpml_filter_hrefs_lang = $lang_from;
-        $bpml_filter_hrefs_lang_to = $lang_to;
-        
-        $link = str_replace('/\/' . $lang . '\//', '/', $matches[1][$position]);
-        $replace = str_replace('/', '\/', $matches[0][$position]);echo $replace . $link;
-        $content = preg_replace('/href=["\']' . $replace . '["\']/', $link, $content);
-    }
-    return $content;
-}
