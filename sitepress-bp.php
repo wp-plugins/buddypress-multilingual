@@ -146,8 +146,8 @@ function bpml_init_check() {
                     wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
                 } else {
                     require_once dirname(__FILE__) . '/admin.php';
-                    $version = get_option('bpml_version', '1.0.1');
-                    if (version_compare($version, BPML_VERSION, '<')) {
+                    $version = get_option('bpml_version', FALSE);
+                    if (empty($version) || version_compare($version, BPML_VERSION, '<')) {
                         require_once dirname(__FILE__) . '/upgrade.php';
                         bpml_upgrade();
                     }

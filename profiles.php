@@ -7,11 +7,7 @@
 /**
  * Init hook.
  */
-function bpml_profiles_init() {
-    if (!get_option('bpml_xprofile_installed', FALSE)) {
-        bpml_profiles_install();
-    }
-}
+function bpml_profiles_init() {}
 
 /**
  * Adds translation options on 'Edit Profile' page.
@@ -170,35 +166,6 @@ function bpml_profiles_bp_get_the_profile_field_value_filter($value, $type,
  */
 function bpml_xprofile_data_before_save_hook($field) {
     bpml_store_frontend_notice('profile-field-updated', '<a href="#bpml-translate-fields">Check if fields need translation updated.</a>');
-}
-
-/**
- * Install.
- *
- * @global  $wpdb
- */
-function bpml_profiles_install() {
-    global $wpdb;
-    $table_name = $wpdb->prefix . "bp_xprofile_data_bpml";
-    if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
-        $sql = "CREATE TABLE " . $table_name . " (
-	  id bigint(20) NOT NULL AUTO_INCREMENT,
-      field_id bigint(20) NOT NULL,
-      user_id bigint(20) NOT NULL,
-      value longtext,
-      lang varchar(10) NOT NULL,
-	  PRIMARY KEY (id),
-      KEY field_id (field_id),
-      KEY user_id (user_id),
-      KEY lang (lang) 
-	);";
-
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
-        bpml_save_setting('profiles', array('translation' => 'no'));
-    } else {
-        update_option('bpml_xprofile_installed', 1);
-    }
 }
 
 /**

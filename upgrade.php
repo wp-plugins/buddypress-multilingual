@@ -6,7 +6,11 @@
 function bpml_upgrade() {
     $upgrade_failed = FALSE;
     $upgrade_debug = array();
-    $version = get_option('bpml_version', '1.0.1');
+    $version = get_option('bpml_version', FALSE);
+    if (empty($version)) {
+        $version = '1.0.1';
+        bpml_install();
+    }
     if (version_compare($version, BPML_VERSION, '<')) {
         $first_step = str_replace('.', '', $version);
         $last_step = str_replace('.', '', BPML_VERSION);
@@ -27,8 +31,33 @@ function bpml_upgrade() {
     update_option('bpml_version', BPML_VERSION);
 }
 
+function bpml_install() {
+    global $wpdb;
+
+    // Profiles
+    $table_name = $wpdb->prefix . "bp_xprofile_data_bpml";
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+        $sql = "CREATE TABLE " . $table_name . " (
+	  id bigint(20) NOT NULL AUTO_INCREMENT,
+      field_id bigint(20) NOT NULL,
+      user_id bigint(20) NOT NULL,
+      value longtext,
+      lang varchar(10) NOT NULL,
+	  PRIMARY KEY (id),
+      KEY field_id (field_id),
+      KEY user_id (user_id),
+      KEY lang (lang)
+	);";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+    }
+}
+
 function bpml_upgrade_110() {
-    global $bpml;
+    global $bpml, $wpdb;
+
+    // New activity
     if (!isset($bpml['collected_activities']['new_blog'])) {
         $bpml['collected_activities']['new_blog'] = array(
             'translate_title' => 1,
@@ -39,5 +68,29 @@ function bpml_upgrade_110() {
         );
         bpml_save_settings($bpml);
     }
+
+    // Profiles
+    $table_name = $wpdb->prefix . "bp_xprofile_data_bpml";
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+        $sql = "CREATE TABLE " . $table_name . " (
+	  id bigint(20) NOT NULL AUTO_INCREMENT,
+      field_id bigint(20) NOT NULL,
+      user_id bigint(20) NOT NULL,
+      value longtext,
+      lang varchar(10) NOT NULL,
+	  PRIMARY KEY (id),
+      KEY field_id (field_id),
+      KEY user_id (user_id),
+      KEY lang (lang)
+	);";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+    }
+    if (!isset($bpml['profiles'])) {
+        $bpml['profiles'] = array('translation' => 'no');
+        bpml_save_settings($bpml);
+    }
+
     return TRUE;
 }
