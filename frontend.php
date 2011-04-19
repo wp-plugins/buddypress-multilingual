@@ -87,13 +87,42 @@ function bpml_admin_url_filter($url, $path, $blog_id) {
  * @param <type> $limit
  * @return <type>
  */
-function bpml_filter_hrefs($string = '', $lang = '', $limit = -1) {
-    global $bpml_filter_hrefs_lang;
+function bpml_filter_hrefs($string = '', $lang = '', $limit = -1,
+        $position = NULL) {
+    global $bpml_filter_hrefs_lang, $bpml_filter_hrefs_count;
+    $bpml_filter_hrefs_count = 0;
     $bpml_filter_hrefs_lang = $lang;
-    if (is_object($args)) {
-        return $args;
+    if (!is_null($position)) {
+        global $bpml_filter_hrefs_position;
+        $bpml_filter_hrefs_position = $position;
     }
-    return preg_replace_callback('/href=["\'](.+?)["\']/', 'bpml_filter_href_matches', $string, $limit);
+    $return = preg_replace_callback('/href=["\'](.+?)["\']/', 'bpml_filter_href_matches', $string, $limit);
+    $bpml_filter_hrefs_count = 0;
+    return $return;
+}
+
+/**
+ * Translates all links in given string from to.
+ *
+ * @global <type> $bpml_filter_hrefs_lang
+ * @param <type> $string
+ * @param <type> $lang
+ * @param <type> $limit
+ * @return <type>
+ */
+function bpml_filter_hrefs_from_to($string = '', $lang_from = '', $lang_to = '',
+        $limit = -1, $position = NULL) {
+    global $bpml_filter_hrefs_lang, $bpml_filter_hrefs_lang_to, $bpml_filter_hrefs_count;
+    $bpml_filter_hrefs_count = 0;
+    $bpml_filter_hrefs_lang = $lang_from;
+    $bpml_filter_hrefs_lang_to = $lang_to;
+    if (!is_null($position)) {
+        global $bpml_filter_hrefs_position;
+        $bpml_filter_hrefs_position = $position;
+    }
+    $return = preg_replace_callback('/href=["\'](.+?)["\']/', 'bpml_filter_href_matches', $string, $limit);
+    $bpml_filter_hrefs_count = 0;
+    return $return;
 }
 
 /**
@@ -105,9 +134,24 @@ function bpml_filter_hrefs($string = '', $lang = '', $limit = -1) {
  * @return <type>
  */
 function bpml_filter_href_matches($match = array()) {
-    global $sitepress, $bpml_filter_hrefs_lang;
-    if ($sitepress->get_current_language() != $sitepress->get_default_language()) {
-        $converted = $sitepress->convert_url($match[1]);
+    global $sitepress, $bpml_filter_hrefs_lang, $bpml_filter_hrefs_lang_to, $bpml_filter_hrefs_position, $bpml_filter_hrefs_count;
+
+    if (!empty($bpml_filter_hrefs_position)) {
+        if ($bpml_filter_hrefs_count != $bpml_filter_hrefs_position) {
+            $bpml_filter_hrefs_count += 1;
+            return $match[0];
+        }
+    }
+
+    if (!empty($bpml_filter_hrefs_lang_to)) {
+        $lang_to = ($bpml_filter_hrefs_lang_to == $sitepress->get_default_language()) ? '' : $bpml_filter_hrefs_lang_to . '/';
+        $converted =  preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $lang_to, $match[1], 1);
+    } else if ($sitepress->get_current_language() != $sitepress->get_default_language()) {
+        if ($bpml_filter_hrefs_lang !== $sitepress->get_default_language()) {
+            $converted = preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $sitepress->get_current_language() . '/', $match[1], 1);
+        } else {
+            $converted = $sitepress->convert_url($match[1]);
+        }
         // Check doubled
         $converted = preg_replace('/\/' . $sitepress->get_current_language() . '\/' . $sitepress->get_current_language() . '\//', '/' . $sitepress->get_current_language() . '/', $converted, 1);
     } else {
@@ -210,4 +254,26 @@ BPML Settings
 BuddyPress ';
     print_r($bp);
     echo '</pre></div>';
+}
+
+/**
+ * Removes language from link.
+ *
+ * @todo add support for all links
+ *
+ * @param <type> $content
+ * @param <type> $position
+ */
+function bpml_remove_lang_from_link_position($content, $lang_from, $lang_to, $position = 0) {
+    preg_match_all('/href=["\'](.+?)["\']/', $content, $matches);echo '<pre>';print_r($matches);
+    if (isset($matches[$position])) {
+        global $bpml_filter_hrefs_lang, $bpml_filter_hrefs_lang_to;
+        $bpml_filter_hrefs_lang = $lang_from;
+        $bpml_filter_hrefs_lang_to = $lang_to;
+        
+        $link = str_replace('/\/' . $lang . '\//', '/', $matches[1][$position]);
+        $replace = str_replace('/', '\/', $matches[0][$position]);echo $replace . $link;
+        $content = preg_replace('/href=["\']' . $replace . '["\']/', $link, $content);
+    }
+    return $content;
 }

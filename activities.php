@@ -6,6 +6,19 @@
  */
 
 /**
+ * Before saving activity hook.
+ *
+ * @param <type> $item
+ */
+function bpml_activities_bp_activity_before_save_hook($item) {
+    if ($item->type == 'new_blog') {
+        global $sitepress;
+        $item->action = bpml_filter_hrefs_from_to($item->action, ICL_LANGUAGE_CODE,
+                $sitepress->get_default_language(), -1, 1);
+    }
+}
+
+/**
  * Saves activity language.
  *
  * @global <type> $sitepress

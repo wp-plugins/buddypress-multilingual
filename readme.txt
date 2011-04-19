@@ -3,8 +3,8 @@ Contributors: icanlocalize, jozik
 Donate link: http://wpml.org/?page_id=2312
 Tags: i18n, translation, localization, language, multilingual, WPML, BuddyPress
 Requires at least: 3.0
-Tested up to: 3.1
-Stable tag: 1.0.1
+Tested up to: 3.1.1
+Stable tag: 1.1.0
 
 BuddyPress Multilingual allows BuddyPress sites to run fully multilingual using the WPML plugin.
 
@@ -35,6 +35,7 @@ For support, please visit [WPML forum](http://forum.wpml.org).
 1. Unzip and upload contents of sitepress-bp.zip file to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the Network 'Plugins' menu in WordPress (only available as 'Network' plugin).
 3. Enable WPML (can be enabled before this BuddyPress Multilingual).
+4. To set preferences go to Settings/BuddyPress Multilingual on main blog.
 
 == Frequently Asked Questions ==
 
@@ -49,6 +50,9 @@ For example, /fr/members/ to the French members list.
 1. Multilingual main BuddyPress page.
 
 == Changelog ==
+
+= 1.1.0 =
+* Added translation support for XProfile fields
 
 = 1.0.1 =
 * Supports BuddyPress 1.2.8 and WP Network mode
@@ -71,5 +75,5 @@ For example, /fr/members/ to the French members list.
 
 == Upgrade Notice ==
 
-= 1.0.1 =
+= 1.1.0 =
 * Runs on BuddyPress 1.2.8

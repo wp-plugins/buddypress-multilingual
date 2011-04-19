@@ -5,7 +5,7 @@
   Description: BuddyPress Multilingual. <a href="http://wpml.org/?page_id=2890">Documentation</a>.
   Author: OnTheGoSystems
   Author URI: http://www.onthegosystems.com
-  Version: 1.0.1
+  Version: 1.1.0
   Network: true
  */
 
@@ -27,7 +27,7 @@
 /**
  * Define constants
  */
-define('BPML_VERSION', '1.0.1');
+define('BPML_VERSION', '1.1.0');
 define('BPML_PLUGIN_URL', plugins_url(basename(dirname(__FILE__))));
 
 add_action('plugins_loaded', 'bpml_plugins_loaded_hook', 0);
@@ -86,6 +86,7 @@ function bpml_init_check() {
             // Site wide
             include_once dirname(__FILE__) . '/activities.php';
             add_action('bp_activity_after_save', 'bpml_activities_bp_activity_after_save_hook');
+            add_action('bp_activity_before_save', 'bpml_activities_bp_activity_before_save_hook');
 
             // Main blog
             if (is_main_site ()) {
@@ -145,6 +146,11 @@ function bpml_init_check() {
                     wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
                 } else {
                     require_once dirname(__FILE__) . '/admin.php';
+                    $version = get_option('bpml_version', '1.0.1');
+                    if (version_compare($version, BPML_VERSION, '<')) {
+                        require_once dirname(__FILE__) . '/upgrade.php';
+                        bpml_upgrade();
+                    }
                     add_action('admin_init', 'bpml_admin_show_stored_admin_notices');
                     add_action('admin_menu', 'bpml_admin_menu');
                     if (isset($_GET['page']) && $_GET['page'] == 'bpml') {
@@ -225,6 +231,13 @@ function bpml_default_settings() {
                 'translate_links' => -1
             ),
             'created_group' => array(
+                'translate_title' => 1,
+                'translate_title_cache' => 1,
+                'translate_content' => 1,
+                'translate_content_cache' => 1,
+                'translate_links' => -1
+            ),
+            'new_blog' => array(
                 'translate_title' => 1,
                 'translate_title_cache' => 1,
                 'translate_content' => 1,
