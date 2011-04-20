@@ -54,6 +54,9 @@ function bpml_install() {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
     }
+
+    // For users had 1.0.1 and earlier
+    bpml_upgrade_110();
 }
 
 function bpml_upgrade_110() {
