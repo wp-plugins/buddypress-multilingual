@@ -8,7 +8,7 @@ function bpml_upgrade() {
     $upgrade_debug = array();
     $version = get_option('bpml_version', FALSE);
     if (empty($version)) {
-        $version = '1.0.1';
+        $version = BPML_VERSION;
         bpml_install();
     }
     if (version_compare($version, BPML_VERSION, '<')) {
@@ -32,7 +32,9 @@ function bpml_upgrade() {
 }
 
 function bpml_install() {
-    global $wpdb;
+    global $wpdb, $bpml;
+
+    bpml_save_settings($bpml);
 
     // Profiles
     $table_name = $wpdb->prefix . "bp_xprofile_data_bpml";
@@ -66,7 +68,6 @@ function bpml_upgrade_110() {
             'translate_content_cache' => 1,
             'translate_links' => -1
         );
-        bpml_save_settings($bpml);
     }
 
     // Profiles
@@ -89,8 +90,9 @@ function bpml_upgrade_110() {
     }
     if (!isset($bpml['profiles'])) {
         $bpml['profiles'] = array('translation' => 'no');
-        bpml_save_settings($bpml);
     }
+
+    bpml_save_settings($bpml);
 
     return TRUE;
 }
