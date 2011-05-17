@@ -71,7 +71,7 @@ function bpml_get_cookie_lang($lang = '') {
  * @global <type> $sitepress_settings
  */
 function bpml_init_check() {
-    global $sitepress_settings;
+    global $sitepress_settings, $sitepress;
     if (defined('BP_VERSION') && defined('ICL_SITEPRESS_VERSION')) {
         if ((!isset($sitepress_settings['language_negotiation_type'])
                 || $sitepress_settings['language_negotiation_type'] != 1)

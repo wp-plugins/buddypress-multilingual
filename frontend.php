@@ -9,7 +9,9 @@
  * @param <type> $a
  */
 function bpml_test($a = '') {
-    echo '<pre>'; print_r($a); echo '</pre>';
+    echo '<pre>';
+    print_r($a);
+    echo '</pre>';
 }
 
 /**
@@ -39,6 +41,9 @@ function bpml_bp_after_footer_hook() {
  */
 function bpml_site_url_filter($url, $path = '') {
     global $sitepress;
+    if ($sitepress->get_default_language() == ICL_LANGUAGE_CODE) {
+        return $url;
+    }
     return rtrim($sitepress->convert_url($url), '/');
 }
 
@@ -61,6 +66,9 @@ function bpml_blogs_redirect_to_random_blog() {
  */
 function bpml_bp_core_get_root_domain_filter($url) {
     global $sitepress;
+    if ($sitepress->get_default_language() == ICL_LANGUAGE_CODE) {
+        return $url;
+    }
     return rtrim($sitepress->convert_url($url), '/');
 }
 
@@ -145,7 +153,7 @@ function bpml_filter_href_matches($match = array()) {
 
     if (!empty($bpml_filter_hrefs_lang_to)) {
         $lang_to = ($bpml_filter_hrefs_lang_to == $sitepress->get_default_language()) ? '' : $bpml_filter_hrefs_lang_to . '/';
-        $converted =  preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $lang_to, $match[1], 1);
+        $converted = preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $lang_to, $match[1], 1);
     } else if ($sitepress->get_current_language() != $sitepress->get_default_language()) {
         if ($bpml_filter_hrefs_lang !== $sitepress->get_default_language()) {
             $converted = preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $sitepress->get_current_language() . '/', $match[1], 1);
@@ -198,7 +206,7 @@ function bpml_icl_ls_languages_filter($langs) {
     }
     foreach ($langs as $key => $lang) {
         $langs[$key]['url'] = $sitepress->convert_url(get_option('home')
-                . '/' . implode('/', $bp_unfiltered_uri), $lang['language_code']);
+                        . '/' . implode('/', $bp_unfiltered_uri), $lang['language_code']);
     }
     return $langs;
 }
@@ -226,6 +234,7 @@ function bpml_debug($message, $class = 'bpml-debug-updated') {
  * Header hook.
  */
 function bpml_wp_head_hook() {
+
 }
 
 /**
