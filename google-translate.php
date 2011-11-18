@@ -141,10 +141,14 @@ function bpml_google_translate($content, $from_language, $to_language) {
     $url = sprintf($gtranslateurl, urlencode($content), $from_language, $to_language);
     $url = str_replace('|', '%7C', $url);
     $response = $client->request($url);
-    if (!is_wp_error($response) && ($response['response']['code'] == '200')) {
+    if (!is_wp_error($response) && $response['response']['code'] == '200' && $response['response']['code'] == '403') {
         $translation = json_decode($response['body']);
+		
         $content = $translation->responseData->translatedText;
+    } else {
+    	$content = null;
     }
+    
     return $content;
 }
 

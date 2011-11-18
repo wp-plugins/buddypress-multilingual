@@ -79,28 +79,36 @@ function bpml_activities_bp_before_activity_loop_hook() {
  * @return <type>
  */
 function bpml_activities_bp_activity_get_filter($activity, $r = NULL) {
-    global $sitepress, $bpml_in_activity_loop;
+    global $sitepress, $bpml_in_activity_loop, $bpml;
     static $cache = array();
+    
     $default_language = $sitepress->get_default_language();
     $current_language = $sitepress->get_current_language();
+    
     foreach ($activity['activities'] as $key => $result) {
         if (isset($cache[$result->id])) {
             $activity['activities'][$key] = $cache[$result->id];
             continue;
         }
-        $activity['activities'][$key] = bpml_activities_translate_activity($result, $default_language, $current_language);
+        
+        if($bpml['activities']['filter'] !== 1){
+        	$activity['activities'][$key] = bpml_activities_translate_activity($result, $default_language, $current_language);
+        }
+
         if ($activity['activities'][$key] == FALSE) {
             unset($activity['activities'][$key]);
         } else {
             $cache[$result->id] = $activity['activities'][$key];
         }
     }
-//    if (!empty($bpml_in_activity_loop) && function_exists('bpml_google_translate_button')) {
-    if (function_exists('bpml_google_translate_button')) {
-        echo bpml_google_translate_button();
+    
+    if (!empty($bpml_in_activity_loop) && function_exists('bpml_google_translate_button')) {
+	    if (function_exists('bpml_google_translate_button')) {
+	        echo bpml_google_translate_button();
+	    }
+	    $activity['total'] = count($activity['activities']);
+	    return $activity;
     }
-    $activity['total'] = count($activity['activities']);
-    return $activity;
 }
 
 /**
@@ -148,7 +156,7 @@ function bpml_activities_translate_activity($result, $default_language, $current
     if (($bpml['activities']['filter'] && $lang == $current_language)
             || (!$bpml['activities']['filter'])) {
 
-        $result->lang = $lang;
+	    $result->lang = $lang;
         if (!empty($lang_recorded)) {
             $result->lang_recorded = $lang_recorded;
         }
@@ -272,10 +280,12 @@ function bpml_activities_assign_language_dropdown() {
     if (!current_user_can('administrator')) {
         return '';
     }
-    global $activities_template, $sitepress;
+    global $activities_template, $sitepress, $bp;
+	
     $langs = $sitepress->get_active_languages();
     $data = '';
-    foreach ($langs as $lang) {
+	
+    foreach ($langs as $k => $lang) {
         $selected = $activities_template->activity->lang == $lang['code'] ? ' selected="selected"' : '';
         $data .= '<option value="' . $lang['code'] . '"' . $selected . '>' . $lang['english_name'] . '</option>';
     }

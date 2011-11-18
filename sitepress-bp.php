@@ -71,7 +71,7 @@ function bpml_get_cookie_lang($lang = '') {
  * @global <type> $sitepress_settings
  */
 function bpml_init_check() {
-    global $sitepress_settings, $sitepress;
+    global $sitepress_settings;
     if (defined('BP_VERSION') && defined('ICL_SITEPRESS_VERSION')) {
         if ((!isset($sitepress_settings['language_negotiation_type'])
                 || $sitepress_settings['language_negotiation_type'] != 1)
@@ -87,7 +87,55 @@ function bpml_init_check() {
             include_once dirname(__FILE__) . '/activities.php';
             add_action('bp_activity_after_save', 'bpml_activities_bp_activity_after_save_hook');
             add_action('bp_activity_before_save', 'bpml_activities_bp_activity_before_save_hook');
-
+			
+            // Navigation filter
+            if(version_compare(BP_VERSION, '1.2.9') >= 0){
+				function nav_menu_filter($items) {
+					global $sitepress, $bp, $sitepress_settings, $bp;
+					$default_language = $sitepress->get_default_language();
+					$additionalItems = '';
+					
+					foreach($bp->active_components as $component => $value){
+						$pos = strpos($items, $component);
+						$show_menu = ($pos !== false) ? $show_menu = false : $show_menu = true;
+					}
+					
+					if(bp_is_page( BP_ACTIVITY_SLUG ) || bp_is_page( BP_MEMBERS_SLUG ) || bp_is_page( BP_GROUPS_SLUG ) || bp_is_page( BP_FORUMS_SLUG ) || bp_is_page( BP_BLOGS_SLUG ))
+						$currentLang = '/' . ICL_LANGUAGE_CODE;
+					else 
+						bp_is_user() ? $currentLang = '/' . ICL_LANGUAGE_CODE : $currentLang = '';
+					
+					if( $show_menu ){
+						$item_class = ( bp_is_page( BP_ACTIVITY_SLUG ) ) ? $activity_class = 'current_page_item' : $activity_class = ''; 
+						$item_class = ( bp_is_page( BP_MEMBERS_SLUG ) ) || bp_is_user() ? $members_class = 'current_page_item' : $members_class = '';
+						$item_class = ( bp_is_page( BP_GROUPS_SLUG ) ) || bp_is_group() ? $groups_class = 'current_page_item' : $groups_class = '';
+						$item_class = ( bp_is_page( BP_FORUMS_SLUG ) ) ? $forums_class = 'current_page_item' : $forums_class = ''; 
+						$item_class = ( bp_is_page( BP_BLOGS_SLUG ) ) ? $blogs_class = 'current_page_item' : $blogs_class = ''; 
+							
+						if(!$currentLang == '') : $currentLang = $currentLang . '/'; endif;
+						if($default_language == ICL_LANGUAGE_CODE) : $currentLang = $currentLang = '/'; endif;
+							
+						if ( 'activity' != bp_dtheme_page_on_front() && bp_is_active( 'activity' ) ) : 
+							$additionalItems .= '<li class="'. $activity_class .'"><a href="'. home_url() . $currentLang . BP_ACTIVITY_SLUG .'">' . __('Activity') . '</a></li>'; 
+						endif;
+						if ( bp_is_active( 'groups' ) ) :
+							$additionalItems .= '<li class="'. $groups_class .'"><a href="'. home_url() . $currentLang . BP_GROUPS_SLUG .'">' . __('Groups') . '</a></li>';
+						endif;
+						$additionalItems .= '<li class="'. $members_class .'"><a href="'. home_url() . $currentLang . BP_MEMBERS_SLUG .'">' . __('Members') . '</a></li>';
+						if ( bp_is_active( 'forums' ) && ( function_exists( 'bp_forums_is_installed_correctly' ) && !(int) bp_get_option( 'bp-disable-forum-directory' ) ) && bp_forums_is_installed_correctly() ) :
+							$additionalItems .= '<li class="'. $forums_class .'"><a href="'. home_url() . $currentLang . BP_FORUMS_SLUG .'">' . __('Forums') . '</a></li>';
+						endif;
+						if ( bp_is_active( 'blogs' ) && is_multisite() ) :
+							$additionalItems .= '<li class="'. $blogs_class .'"><a href="'. home_url() . $currentLang . BP_BLOGS_SLUG .'">' . __('Blogs') . '</a></li>';
+						endif;
+					}
+					
+					$items = $additionalItems . $items;
+					return $items;
+					}
+					add_filter( 'wp_list_pages', 'nav_menu_filter' );
+			}
+			
             // Main blog
             if (is_main_site ()) {
                 // Profiles
@@ -140,10 +188,8 @@ function bpml_init_check() {
                         add_action('wp_ajax_activity_widget_filter', 'bpml_google_translate_indicate_ajax');
                         add_action('wp_ajax_activity_get_older_updates', 'bpml_google_translate_indicate_ajax');
                     }
-
-                    wp_enqueue_style('sitepress-language-switcher', ICL_PLUGIN_URL . '/res/css/language-selector.css', array(), ICL_SITEPRESS_VERSION);
-                    wp_enqueue_style('bpml', BPML_PLUGIN_URL . '/style.css', array(), BPML_VERSION);
-                    wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
+					
+					add_action('init', 'additional_css_js');
                 } else {
                     require_once dirname(__FILE__) . '/admin.php';
                     $version = get_option('bpml_version', FALSE);
@@ -157,8 +203,7 @@ function bpml_init_check() {
                         require_once dirname(__FILE__) . '/admin-form.php';
                         add_action('bpml_settings_form_before', 'bpml_profiles_admin_form');
                         add_action('admin_init', 'bpml_admin_save_settings_submit');
-                        wp_enqueue_style('bpml', BPML_PLUGIN_URL . '/style.css', array(), BPML_VERSION);
-                        wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
+						add_action('admin_init', 'admin_additional_css_js');
                     }
                 }
                 add_action('wp_ajax_bpml_ajax', 'bpml_ajax');
@@ -168,6 +213,25 @@ function bpml_init_check() {
     } else if (is_main_site ()) {
         bpml_admin_message('<p>' . __('For BuddyPress Multilingual to work you must enable WPML and BuddyPress.') . '</p>');
     }
+}
+
+/**
+ * Adds hook for CSS styles and jQuery to client-side.
+ *
+ */
+function additional_css_js() {
+	wp_enqueue_style('sitepress-language-switcher', ICL_PLUGIN_URL . '/res/css/language-selector.css', array(), ICL_SITEPRESS_VERSION);
+	wp_enqueue_style('bpml', BPML_PLUGIN_URL . '/style.css', array(), BPML_VERSION);
+	wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
+}
+
+/**
+ * Adds hook for Admin CSS styles and jQuery to admin-side.
+ *
+ */
+function admin_additional_css_js() {
+	wp_enqueue_style('bpml', BPML_PLUGIN_URL . '/style.css', array(), BPML_VERSION);
+	wp_enqueue_script('bpml', BPML_PLUGIN_URL . '/scripts.js', array('jquery'), BPML_VERSION);
 }
 
 /**

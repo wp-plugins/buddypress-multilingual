@@ -9,7 +9,7 @@
  * @global <type> $wpdb
  */
 function bpml_admin_save_settings_submit() {
-    if (current_user_can('manage_options') && wp_verify_nonce($_POST['_wpnonce'], 'bpml_save_options') && isset($_POST['bpml'])) {
+    if (current_user_can('manage_options') && wp_verify_nonce(isset($_POST['_wpnonce']), 'bpml_save_options') && isset($_POST['bpml'])) {
         if (isset($_POST['bpml_clear_google_cache'])) {
             bpml_activities_clear_cache('all', 'bpml_google_translation');
             bpml_store_admin_notice('settings_saved', '<p>Cache cleared</p>');
