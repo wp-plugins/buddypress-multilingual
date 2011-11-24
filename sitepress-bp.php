@@ -5,7 +5,7 @@
   Description: BuddyPress Multilingual. <a href="http://wpml.org/?page_id=2890">Documentation</a>.
   Author: OnTheGoSystems
   Author URI: http://www.onthegosystems.com
-  Version: 1.2.0
+  Version: 1.2.1
   Network: true
  */
 
@@ -27,7 +27,7 @@
 /**
  * Define constants
  */
-define('BPML_VERSION', '1.2.0');
+define('BPML_VERSION', '1.2.1');
 define('BPML_PLUGIN_URL', plugins_url(basename(dirname(__FILE__))));
 
 add_action('plugins_loaded', 'bpml_plugins_loaded_hook', 0);
@@ -96,7 +96,7 @@ function bpml_init_check() {
 					$additionalItems = '';
 					
 					foreach($bp->active_components as $component => $value){
-						$pos = strpos($items, $component);
+						$pos = @strpos($items, $component);
 						$show_menu = ($pos !== false) ? $show_menu = false : $show_menu = true;
 					}
 					
@@ -115,14 +115,14 @@ function bpml_init_check() {
 						if(!$currentLang == '') : $currentLang = $currentLang . '/'; endif;
 						if($default_language == ICL_LANGUAGE_CODE) : $currentLang = $currentLang = '/'; endif;
 							
-						if ( 'activity' != bp_dtheme_page_on_front() && bp_is_active( 'activity' ) ) : 
+						if ( bp_is_active( 'activity' ) ) : 
 							$additionalItems .= '<li class="'. $activity_class .'"><a href="'. home_url() . $currentLang . BP_ACTIVITY_SLUG .'">' . __('Activity') . '</a></li>'; 
 						endif;
 						if ( bp_is_active( 'groups' ) ) :
 							$additionalItems .= '<li class="'. $groups_class .'"><a href="'. home_url() . $currentLang . BP_GROUPS_SLUG .'">' . __('Groups') . '</a></li>';
 						endif;
 						$additionalItems .= '<li class="'. $members_class .'"><a href="'. home_url() . $currentLang . BP_MEMBERS_SLUG .'">' . __('Members') . '</a></li>';
-						if ( bp_is_active( 'forums' ) && ( function_exists( 'bp_forums_is_installed_correctly' ) && !(int) bp_get_option( 'bp-disable-forum-directory' ) ) && bp_forums_is_installed_correctly() ) :
+						if ( bp_is_active( 'forums' ) ) :
 							$additionalItems .= '<li class="'. $forums_class .'"><a href="'. home_url() . $currentLang . BP_FORUMS_SLUG .'">' . __('Forums') . '</a></li>';
 						endif;
 						if ( bp_is_active( 'blogs' ) && is_multisite() ) :
@@ -132,7 +132,7 @@ function bpml_init_check() {
 					
 					$items = $additionalItems . $items;
 					return $items;
-					}
+				}
 					add_filter( 'wp_list_pages', 'nav_menu_filter' );
 			}
 			
