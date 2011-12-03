@@ -18,7 +18,7 @@ This plugin requires [WPML](http://wpml.org/). It uses WPML's language API and h
 
 Requirements:
 
-* WPML 2.2.1 or higher. You must enable 'languages per directories'.
+* WPML 2.4.1 or higher. You must enable 'languages per directories'.
 * Supports BuddyPress versions up to 1.5.1
 
 = Features =
@@ -28,7 +28,17 @@ Requirements:
  * Records language and allows Google translation for BuddyPress activity component
  * Allows translation control for each type of activity
 
-For support, please visit [WPML forum](http://forum.wpml.org).
+= New! Customize BuddyPress further using Types and Views =
+
+BPML is now compatible with [Types - The Custom Types and Custom Fields Plugin](http://wp-types.com/home/types-manage-post-types-taxonomy-and-custom-fields/) and [Views - The Custom Content Display Plugin](http://wp-types.com/). Types and Views allow you to customize BuddyPress futher by controlling custom content and displaying it any way you choose.
+
+= Need Support? =
+
+Please submit support requests to **[WPML forum](http://forum.wpml.org)**. Remember to report:
+
+* The versions of BuddyPress, WPML and WordPress that you're using.
+* A URL to your site, where we can see the problem happening.
+* A description of what you expect to see and what you're seeing in practice.
 
 == Installation ==
 
