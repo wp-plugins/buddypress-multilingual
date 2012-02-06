@@ -1,10 +1,10 @@
 === Plugin Name ===
 Contributors: icanlocalize, jozik
-Donate link: http://wpml.org/?page_id=2312
+Donate link: http://wpml.org/documentation/related-projects/buddypress-multilingual/
 Tags: i18n, translation, localization, language, multilingual, WPML, BuddyPress
 Requires at least: 3.0
-Tested up to: 3.2.1
-Stable tag: 1.2.1
+Tested up to: 3.3.1
+Stable tag: 1.3.0
 
 BuddyPress Multilingual allows BuddyPress sites to run fully multilingual using the WPML plugin.
 
@@ -18,8 +18,8 @@ This plugin requires [WPML](http://wpml.org/). It uses WPML's language API and h
 
 Requirements:
 
-* WPML 2.4.1 or higher. You must enable 'languages per directories'.
-* Supports BuddyPress versions up to 1.5.1
+* WPML 2.4.2 or higher. You must enable 'languages per directories'.
+* Supports BuddyPress versions up to 1.5.x
 
 = Features =
 
@@ -61,6 +61,15 @@ For example, /fr/members/ to the French members list.
 
 == Changelog ==
 
+= 1.3.0 =
+* Support BP 1.5.x
+* Language selector doesn't appear on the home page when a page is selected as the front page 
+* Pages widget exclude function doesn't work in the right way
+* Small fix on main navigation menu
+
+= 1.2.1 =
+* Supports BP 1.2
+
 = 1.1.0 =
 * Added translation support for XProfile fields
 
@@ -87,3 +96,6 @@ For example, /fr/members/ to the French members list.
 
 = 1.1.0 =
 * Runs on BuddyPress 1.2.8
+
+= 1.3.0 =
+* Runs with BuddyPress 1.5.x

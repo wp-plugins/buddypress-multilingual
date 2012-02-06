@@ -5,7 +5,7 @@
   Description: BuddyPress Multilingual. <a href="http://wpml.org/?page_id=2890">Documentation</a>.
   Author: OnTheGoSystems
   Author URI: http://www.onthegosystems.com
-  Version: 1.2.1
+  Version: 1.3.0
   Network: true
  */
 
@@ -27,7 +27,7 @@
 /**
  * Define constants
  */
-define('BPML_VERSION', '1.2.1');
+define('BPML_VERSION', '1.3.0');
 define('BPML_PLUGIN_URL', plugins_url(basename(dirname(__FILE__))));
 
 add_action('plugins_loaded', 'bpml_plugins_loaded_hook', 0);
@@ -87,55 +87,7 @@ function bpml_init_check() {
             include_once dirname(__FILE__) . '/activities.php';
             add_action('bp_activity_after_save', 'bpml_activities_bp_activity_after_save_hook');
             add_action('bp_activity_before_save', 'bpml_activities_bp_activity_before_save_hook');
-			
-            // Navigation filter
-            if(version_compare(BP_VERSION, '1.2.9') >= 0){
-				function nav_menu_filter($items) {
-					global $sitepress, $bp, $sitepress_settings, $bp;
-					$default_language = $sitepress->get_default_language();
-					$additionalItems = '';
-					
-					foreach($bp->active_components as $component => $value){
-						$pos = @strpos($items, $component);
-						$show_menu = ($pos !== false) ? $show_menu = false : $show_menu = true;
-					}
-					
-					if(bp_is_page( BP_ACTIVITY_SLUG ) || bp_is_page( BP_MEMBERS_SLUG ) || bp_is_page( BP_GROUPS_SLUG ) || bp_is_page( BP_FORUMS_SLUG ) || bp_is_page( BP_BLOGS_SLUG ))
-						$currentLang = '/' . ICL_LANGUAGE_CODE;
-					else 
-						bp_is_user() ? $currentLang = '/' . ICL_LANGUAGE_CODE : $currentLang = '';
-					
-					if( $show_menu ){
-						$item_class = ( bp_is_page( BP_ACTIVITY_SLUG ) ) ? $activity_class = 'current_page_item' : $activity_class = ''; 
-						$item_class = ( bp_is_page( BP_MEMBERS_SLUG ) ) || bp_is_user() ? $members_class = 'current_page_item' : $members_class = '';
-						$item_class = ( bp_is_page( BP_GROUPS_SLUG ) ) || bp_is_group() ? $groups_class = 'current_page_item' : $groups_class = '';
-						$item_class = ( bp_is_page( BP_FORUMS_SLUG ) ) ? $forums_class = 'current_page_item' : $forums_class = ''; 
-						$item_class = ( bp_is_page( BP_BLOGS_SLUG ) ) ? $blogs_class = 'current_page_item' : $blogs_class = ''; 
-							
-						if(!$currentLang == '') : $currentLang = $currentLang . '/'; endif;
-						if($default_language == ICL_LANGUAGE_CODE) : $currentLang = $currentLang = '/'; endif;
-							
-						if ( bp_is_active( 'activity' ) ) : 
-							$additionalItems .= '<li class="'. $activity_class .'"><a href="'. home_url() . $currentLang . BP_ACTIVITY_SLUG .'">' . __('Activity') . '</a></li>'; 
-						endif;
-						if ( bp_is_active( 'groups' ) ) :
-							$additionalItems .= '<li class="'. $groups_class .'"><a href="'. home_url() . $currentLang . BP_GROUPS_SLUG .'">' . __('Groups') . '</a></li>';
-						endif;
-						$additionalItems .= '<li class="'. $members_class .'"><a href="'. home_url() . $currentLang . BP_MEMBERS_SLUG .'">' . __('Members') . '</a></li>';
-						if ( bp_is_active( 'forums' ) ) :
-							$additionalItems .= '<li class="'. $forums_class .'"><a href="'. home_url() . $currentLang . BP_FORUMS_SLUG .'">' . __('Forums') . '</a></li>';
-						endif;
-						if ( bp_is_active( 'blogs' ) && is_multisite() ) :
-							$additionalItems .= '<li class="'. $blogs_class .'"><a href="'. home_url() . $currentLang . BP_BLOGS_SLUG .'">' . __('Blogs') . '</a></li>';
-						endif;
-					}
-					
-					$items = $additionalItems . $items;
-					return $items;
-				}
-					add_filter( 'wp_list_pages', 'nav_menu_filter' );
-			}
-			
+            
             // Main blog
             if (is_main_site ()) {
                 // Profiles
@@ -169,6 +121,11 @@ function bpml_init_check() {
                     if (isset($_POST['search-terms']) || isset($_REQUEST['action']) || (defined('DOING_AJAX') && DOING_AJAX)) {
                         add_filter('site_url', 'bpml_site_url_filter', 0);
                     }
+					
+					// Filters main navigation menu
+					if(version_compare(BP_VERSION, '1.2.9') >= 0){
+						add_filter( 'wp_list_pages', 'nav_menu_filter' );
+					}
 
                     add_filter('admin_url', 'bpml_admin_url_filter', 0, 3);
                     add_filter('bp_core_get_root_domain', 'bpml_bp_core_get_root_domain_filter', 0);
@@ -552,3 +509,59 @@ function bpml_ajax() {
     do_action('bpml_ajax');
     exit;
 }
+
+
+/**
+ * Filters main navigation menu
+ *
+ * @global <type> $sitepress
+ * @global <type> $bp
+ * @global <type> $sitepress_settings
+ * @param <type> $items
+ * @return <type> $items
+ */
+function nav_menu_filter($items) {
+	global $sitepress, $bp, $sitepress_settings;
+	$default_language = $sitepress->get_default_language();
+	$additionalItems = '';
+					
+	foreach($bp->active_components as $component => $value){
+		$pos = @strpos($items, $component);
+		$show_menu = ($pos !== false) ? $show_menu = false : $show_menu = true;
+	}
+					
+	if(bp_is_page( BP_ACTIVITY_SLUG ) || bp_is_page( BP_MEMBERS_SLUG ) || bp_is_page( BP_GROUPS_SLUG ) || bp_is_page( BP_FORUMS_SLUG ) || bp_is_page( BP_BLOGS_SLUG ))
+		$currentLang = '/' . ICL_LANGUAGE_CODE;
+	else 
+		bp_is_user() ? $currentLang = '/' . ICL_LANGUAGE_CODE : $currentLang = '';
+					
+	if( $show_menu ){
+		$item_class = ( bp_is_page( BP_ACTIVITY_SLUG ) ) ? $activity_class = 'current_page_item' : $activity_class = ''; 
+		$item_class = ( bp_is_page( BP_MEMBERS_SLUG ) ) || bp_is_user() ? $members_class = 'current_page_item' : $members_class = '';
+		$item_class = ( bp_is_page( BP_GROUPS_SLUG ) ) || bp_is_group() ? $groups_class = 'current_page_item' : $groups_class = '';
+		$item_class = ( bp_is_page( BP_FORUMS_SLUG ) ) ? $forums_class = 'current_page_item' : $forums_class = ''; 
+		$item_class = ( bp_is_page( BP_BLOGS_SLUG ) ) ? $blogs_class = 'current_page_item' : $blogs_class = ''; 
+							
+		if(!$currentLang == '') : $currentLang = $currentLang . '/'; endif;
+		if($default_language == ICL_LANGUAGE_CODE) : $currentLang = $currentLang = '/'; endif;
+								
+		if ( bp_is_active( 'activity' ) ) : 
+			$additionalItems .= '<li class="'. $activity_class .'"><a href="'. home_url() . $currentLang . BP_ACTIVITY_SLUG .'">' . __('Activity') . '</a></li>'; 
+			endif;
+		if ( bp_is_active( 'groups' ) ) :
+			$additionalItems .= '<li class="'. $groups_class .'"><a href="'. home_url() . $currentLang . BP_GROUPS_SLUG .'">' . __('Groups') . '</a></li>';
+		endif;
+			$additionalItems .= '<li class="'. $members_class .'"><a href="'. home_url() . $currentLang . BP_MEMBERS_SLUG .'">' . __('Members') . '</a></li>';
+		if ( bp_is_active( 'forums' ) ) :
+			$additionalItems .= '<li class="'. $forums_class .'"><a href="'. home_url() . $currentLang . BP_FORUMS_SLUG .'">' . __('Forums') . '</a></li>';
+		endif;
+		if ( bp_is_active( 'blogs' ) && is_multisite() ) :
+			$additionalItems .= '<li class="'. $blogs_class .'"><a href="'. home_url() . $currentLang . BP_BLOGS_SLUG .'">' . __('Blogs') . '</a></li>';
+		endif;
+	}
+					
+	$items = $additionalItems . $items;
+	
+	return $items;
+}
+				

@@ -178,6 +178,9 @@ function bpml_bp_uri_filter($url) {
         return $url;
     }
     return preg_replace('/\/' . ICL_LANGUAGE_CODE . '\//', '/', $url, 1);
+    
+    echo $default_language;
+    
 }
 
 /**
@@ -186,13 +189,14 @@ function bpml_bp_uri_filter($url) {
  * This filtering is performed on BP pages
  * where WPML actually don't detect any post/page.
  *
- * @global $sitepress $sitepress
+ * @global <type> $sitepress
  * @global <type> $bp
  * @global <type> $bp_unfiltered_uri
+ * @global <type> $post
  * @return <type>
  */
 function bpml_icl_ls_languages_filter($langs) {
-	global $sitepress, $bp, $bp_unfiltered_uri;
+	global $sitepress, $bp, $bp_unfiltered_uri, $post;
 	$default_language = $sitepress->get_default_language();
 	
 	foreach($bp->active_components as $key => $value){
@@ -203,18 +207,21 @@ function bpml_icl_ls_languages_filter($langs) {
 		$bp_unfiltered_uri[0] = '';
 	}
 
+	// Unset the languages for missing translations
 	if(!in_array($bp_unfiltered_uri[0], $components)) {
 		foreach ($langs as $key => $lang) {
 		$url = ($default_language !== $key) ? $url = get_option('home') . "/$key/" : $url = get_option('home') . "/";
 			if($url == $langs[$key]['url']){
-				if(!is_home()){
+				if(!is_home() && !is_front_page($post->ID)){
 					unset($langs[$key]); 
 				}
 			}
 		}
+		
 		return $langs;
 	}
-		
+	
+	// Recreates language selector - the all components should have all languages
 	if(version_compare(BP_VERSION, '1.2.9') >= 0){
 		$langs = $sitepress->get_active_languages();
 		$url = '';
@@ -239,6 +246,7 @@ function bpml_icl_ls_languages_filter($langs) {
 		if (!in_array($bp_unfiltered_uri[0], $bp->root_components)) {
 			return $langs;
 		}
+		
 		foreach ($langs as $key => $lang) {
 			$langs[$key]['url'] = $sitepress->convert_url(get_option('home')
 					. '/' . implode('/', $bp_unfiltered_uri), $lang['language_code']);
@@ -295,12 +303,13 @@ function bpml_wp_footer() {
 	
     echo '<pre>';
     echo '
-BPML Settings
-';
+		BPML Settings
+		';
     var_dump($bpml);
     echo '
 
-BuddyPress ';
+		BuddyPress ';
     print_r($bp);
     echo '</pre></div>';
+	
 }
