@@ -3,8 +3,8 @@ Contributors: icanlocalize, jozik
 Donate link: http://wpml.org/documentation/related-projects/buddypress-multilingual/
 Tags: i18n, translation, localization, language, multilingual, WPML, BuddyPress
 Requires at least: 3.0
-Tested up to: 3.3.1
-Stable tag: 1.3.0
+Tested up to: 3.4.2
+Stable tag: 1.4.0
 
 BuddyPress Multilingual allows BuddyPress sites to run fully multilingual using the WPML plugin.
 
@@ -18,8 +18,8 @@ This plugin requires [WPML](http://wpml.org/). It uses WPML's language API and h
 
 Requirements:
 
-* WPML 2.4.2 or higher. You must enable 'languages per directories'.
-* Supports BuddyPress versions up to 1.5.x
+* WPML 2.6.0 or higher. You must enable 'languages per directories'.
+* Supports BuddyPress versions up to 1.6.x
 
 = Features =
 
@@ -30,11 +30,11 @@ Requirements:
 
 = New! Customize BuddyPress further using Types and Views =
 
-BPML is now compatible with [Types - The Custom Types and Custom Fields Plugin](http://wp-types.com/home/types-manage-post-types-taxonomy-and-custom-fields/) and [Views - The Custom Content Display Plugin](http://wp-types.com/). Types and Views allow you to customize BuddyPress futher by controlling custom content and displaying it any way you choose.
+BPML is now compatible with [Types - The Custom Types and Custom Fields Plugin](http://wp-types.com/home/types-manage-post-types-taxonomy-and-custom-fields/) and [Views - The Custom Content Display Plugin](http://wp-types.com/home/views-create-elegant-displays-for-your-content/). Types and Views allow you to customize BuddyPress futher by controlling custom content and displaying it any way you choose.
 
 = Need Support? =
 
-Please submit support requests to **[WPML forum](http://forum.wpml.org)**. Remember to report:
+Please submit support requests to **[WPML forum](http://wpml.org/forums/forum/english-support/)**. Remember to report:
 
 * The versions of BuddyPress, WPML and WordPress that you're using.
 * A URL to your site, where we can see the problem happening.
@@ -61,10 +61,14 @@ For example, /fr/members/ to the French members list.
 
 == Changelog ==
 
+= 1.4.0 =
+* Support BP 1.6.x
+* All translated/duplicated pages works properly
+* Pages widget doesn't exclude translated BuddyPress pages
+
 = 1.3.0 =
 * Support BP 1.5.x
 * Language selector doesn't appear on the home page when a page is selected as the front page 
-* Pages widget exclude function doesn't work in the right way
 * Small fix on main navigation menu
 
 = 1.2.1 =
@@ -99,3 +103,6 @@ For example, /fr/members/ to the French members list.
 
 = 1.3.0 =
 * Runs with BuddyPress 1.5.x
+
+= 1.4.0 =
+* Updated for BuddyPress 1.6.x

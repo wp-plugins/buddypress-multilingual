@@ -191,68 +191,24 @@ function bpml_bp_uri_filter($url) {
  *
  * @global <type> $sitepress
  * @global <type> $bp
- * @global <type> $bp_unfiltered_uri
- * @global <type> $post
  * @return <type>
  */
-function bpml_icl_ls_languages_filter($langs) {
-	global $sitepress, $bp, $bp_unfiltered_uri, $post;
-	$default_language = $sitepress->get_default_language();
+function bpml_icl_ls_languages_filter($languages) {
+	global $sitepress, $bp;
 	
-	foreach($bp->active_components as $key => $value){
-		$components[] = $key;
-	}
+	if ( !empty ( $bp->unfiltered_uri ) ) {
 	
-	if(!isset($bp_unfiltered_uri[0])){
-		$bp_unfiltered_uri[0] = '';
-	}
-
-	// Unset the languages for missing translations
-	if(!in_array($bp_unfiltered_uri[0], $components)) {
-		foreach ($langs as $key => $lang) {
-		$url = ($default_language !== $key) ? $url = get_option('home') . "/$key/" : $url = get_option('home') . "/";
-			if($url == $langs[$key]['url']){
-				if(!is_home() && !is_front_page($post->ID)){
-					unset($langs[$key]); 
-				}
-			}
-		}
+		$slug = implode( '/', $bp->unfiltered_uri );
 		
-		return $langs;
 	}
 	
-	// Recreates language selector - the all components should have all languages
-	if(version_compare(BP_VERSION, '1.2.9') >= 0){
-		$langs = $sitepress->get_active_languages();
-		$url = '';
-		foreach($bp_unfiltered_uri as $key => $path){
-			$url .= '/' . $path;
-		}
-			
-		$homepage = get_option('home');
-		$urlToFlags = ICL_PLUGIN_URL . '/res/flags/';
-		foreach ($langs as $key => $lang) {
-			$langs[$key]['country_flag_url'] = $urlToFlags . "$key.png";
-			$langs[$key]['language_code'] = $key;
-			$langs[$key]['translated_name'] = $lang['english_name'];
-				
-			if($default_language == $key){
-				$langs[$key]['url'] =  $homepage . $url;
-			} else {
-				$langs[$key]['url'] =  $homepage . '/' . $lang['code'] . $url;
-			}
-		}
-	} else {
-		if (!in_array($bp_unfiltered_uri[0], $bp->root_components)) {
-			return $langs;
-		}
+	foreach ( $languages as $k => $language ) {
 		
-		foreach ($langs as $key => $lang) {
-			$langs[$key]['url'] = $sitepress->convert_url(get_option('home')
-					. '/' . implode('/', $bp_unfiltered_uri), $lang['language_code']);
-		}
+		@$languages[$k]['url'] = $sitepress->convert_url( get_option('home') . '/' . $slug, $language['language_code'] ) ;
+		
 	}
-	return $langs;
+	
+	return $languages;
 }
 
 /**
