@@ -186,26 +186,52 @@ function bpml_bp_uri_filter($url) {
 /**
  * Filters WPML languages switcher.
  *
- * This filtering is performed on BP pages
- * where WPML actually don't detect any post/page.
+ * This filtering is performed on BP pages.
  *
  * @global <type> $sitepress
- * @global <type> $bp
+ * @global <type> $bp_unfiltered_uri
+ * @global <type> $post
  * @return <type>
  */
 function bpml_icl_ls_languages_filter($languages) {
-	global $sitepress, $bp;
+	global $sitepress, $bp_unfiltered_uri, $post;
 	
-	if ( !empty ( $bp->unfiltered_uri ) ) {
-	
-		$slug = implode( '/', $bp->unfiltered_uri );
+	$first_page_slug = $bp_unfiltered_uri[0];
+	if( !empty( $first_page_slug ) ){
+		$page_id = get_page_by_path( $first_page_slug );
+		$page_id = $page_id->ID;
 		
-	}
-	
-	foreach ( $languages as $k => $language ) {
-		
-		@$languages[$k]['url'] = $sitepress->convert_url( get_option('home') . '/' . $slug, $language['language_code'] ) ;
-		
+		if( $page_id ){
+			$pages_ids = bp_core_get_directory_page_ids();
+			
+			if( in_array( $page_id, $pages_ids ) ){
+				$search = array_search( $page_id, $pages_ids );
+				
+				if( $search == 'members' || $search == 'groups' || $search == 'forums' ){
+					if ( !empty ( $bp_unfiltered_uri ) ) {
+						$bp_unfiltered_uri_clone = $bp_unfiltered_uri;
+						unset( $bp_unfiltered_uri_clone[0] );
+						
+						$bp_slug = implode( '/', $bp_unfiltered_uri_clone );
+					}
+					
+					$languages = $sitepress->get_active_languages();
+
+					foreach( $languages as $code => $language ){
+						$languages[$code]['country_flag_url'] = ICL_PLUGIN_URL . '/res/flags/' . $code . '.png';
+						$languages[$code]['language_code'] = $code;
+						
+						if( $sitepress->get_display_language_name( $code, $sitepress->get_current_language() ) ){
+							$languages[$code]['translated_name'] = $sitepress->get_display_language_name( $code, $sitepress->get_current_language() );
+						} else {
+							$languages[$code]['translated_name'] = $lang['english_name'];
+						}
+						
+						$languages[$code]['url'] = get_permalink( icl_object_id( $post->ID, 'page', false, $code ) ) . $bp_slug;
+					}
+				}
+			}
+		}
 	}
 	
 	return $languages;

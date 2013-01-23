@@ -14,7 +14,7 @@ function bpml_admin_save_settings_submit() {
             bpml_save_settings(bpml_default_settings());
             bpml_store_admin_notice('settings_saved', '<p>Settings set to default</p>');
         } else {
-            bpml_admin_save_settings_submit_recursive(&$_POST['bpml']);
+            bpml_admin_save_settings_submit_recursive($_POST['bpml']);
             bpml_save_settings($_POST['bpml']);
             do_action('bpml_settings_saved', $_POST['bpml']);
             bpml_store_admin_notice('settings_saved', '<p>Settings saved</p>');
@@ -29,10 +29,10 @@ function bpml_admin_save_settings_submit() {
  *
  * @param <type> $array
  */
-function bpml_admin_save_settings_submit_recursive(&$array) {
+function bpml_admin_save_settings_submit_recursive($array) {
     foreach ($array as $key => &$value) {
         if (is_array($value)) {
-            bpml_admin_save_settings_submit_recursive(&$value);
+            bpml_admin_save_settings_submit_recursive($value);
         } else if ($value == '0' || $value == '1' || $value == '-1') {
             $value = intval($value);
         }

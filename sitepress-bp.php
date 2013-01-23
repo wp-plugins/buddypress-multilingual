@@ -5,7 +5,7 @@
   Description: BuddyPress Multilingual. <a href="http://wpml.org/?page_id=2890">Documentation</a>.
   Author: OnTheGoSystems
   Author URI: http://www.onthegosystems.com
-  Version: 1.4.0
+  Version: 1.4.2
   Network: true
  */
 
@@ -27,7 +27,7 @@
 /**
  * Define constants
  */
-define('BPML_VERSION', '1.4.0');
+define('BPML_VERSION', '1.4.2');
 define('BPML_PLUGIN_URL', plugins_url(basename(dirname(__FILE__))));
 
 add_action('plugins_loaded', 'bpml_plugins_loaded_hook', 0);
@@ -78,15 +78,17 @@ function bpml_init_check() {
                 && is_main_site()) {
             bpml_admin_message('<p>' . __('For BuddyPress Multilingual to work you must set WPML language negotiation to "languages in different directories".') . '</p>');
         } else {
+		
+			if(isset($_GET['bpml_action']) && $_GET['bpml_action'] = 'dismiss'){
+				update_option('bpml_dismiss_notice', 'yes');
+			}
 
             global $bpml;
             $bpml = bpml_get_settings();
             define('BPML_DEBUG', bpml_get_setting('debug', 0));
-
-            // Site wide
-            include_once dirname(__FILE__) . '/activities.php';
-            add_action('bp_activity_after_save', 'bpml_activities_bp_activity_after_save_hook');
-            add_action('bp_activity_before_save', 'bpml_activities_bp_activity_before_save_hook');
+			
+			add_filter('bp_core_get_directory_page_ids', 'bpml_filter_page_ids', 0);
+			add_filter('icl_ls_languages', 'bpml_icl_ls_languages_filter');
             
             // Main blog
             if (is_main_site ()) {
@@ -108,7 +110,6 @@ function bpml_init_check() {
                     add_action('wp_head', 'bpml_wp_head_hook');
                     add_action('wp_footer', 'bpml_wp_footer', 9999);
                     add_action('wp', 'bpml_blogs_redirect_to_random_blog', 0);
-                    add_action('bp_before_activity_loop', 'bpml_activities_bp_before_activity_loop_hook');
                     add_action('bp_core_render_message', 'bpml_show_frontend_notices');
 
                     // Filter site_url on regular pages
@@ -125,9 +126,6 @@ function bpml_init_check() {
                     add_filter('admin_url', 'bpml_admin_url_filter', 0, 3);
                     add_filter('bp_core_get_root_domain', 'bpml_bp_core_get_root_domain_filter', 0);
                     add_filter('bp_uri', 'bpml_bp_uri_filter', 0);
-                    add_filter('icl_ls_languages', 'bpml_icl_ls_languages_filter');
-                    add_filter('bp_activity_get', 'bpml_activities_bp_activity_get_filter', 10, 2);
-                    add_filter('bp_activity_get_specific', 'bpml_activities_bp_activity_get_filter', 10, 2);
 					
 					add_action('init', 'additional_css_js');
                 } else {
@@ -143,7 +141,11 @@ function bpml_init_check() {
                         require_once dirname(__FILE__) . '/admin-form.php';
                         add_action('admin_init', 'bpml_admin_save_settings_submit');
 						add_action('admin_init', 'admin_additional_css_js');
+						
+						add_action('admin_notices', 'admin_page_notice');
                     }
+					
+					add_action('admin_notices', 'after_activation_notice');
                 }
                 add_action('wp_ajax_bpml_ajax', 'bpml_ajax');
                 add_action('bpml_ajax', 'bpml_activities_ajax');
@@ -152,6 +154,37 @@ function bpml_init_check() {
     } else if (is_main_site ()) {
         bpml_admin_message('<p>' . __('For BuddyPress Multilingual to work you must enable WPML and BuddyPress.') . '</p>');
     }
+}
+
+function after_activation_notice(){
+	if(get_option('bpml_dismiss_notice') != 'yes' && $_GET['page'] !== 'bpml'){
+		$url = $_SERVER['REQUEST_URI'];
+		
+		if(strpos($url, '?') !== false){ $url .= '&bpml_action=dismiss'; } else { $url .= '?bpml_action=dismiss'; }
+	?>
+	<div id="message" class="updated message fade" style="clear: both; margin-top: 5px;">
+		<p>
+			<?php _e('Translation for activity streams is disabled because it relied on the discontinued Google translate API. We can bring it back with paid Google translation.', 'bpml'); ?>
+		</p>
+		<p>
+			<a class="button-primary" href="<?php echo admin_url('options-general.php?page=bpml'); ?>"><?php _e('Tell us if you are interested', 'bpml'); ?></a>
+			<a class="button-secondary" href="<?php echo $url; ?>"><?php _e('Dismiss', 'bpml'); ?></a>
+		</p>
+	</div>
+    <?php
+	}
+}
+
+function admin_page_notice(){
+?>
+	<div id="message" class="updated message fade" style="clear: both; margin-top: 5px;">
+		<p>
+			<?php printf(__('The older activity translation has been disabled because Google discontinued their free machine translation API. Instead of the free translation API, Google now offers paid machine translation. We are considering adding support for this new API, which will allow BuddyPress activity streams to be translated again. This will require paying Google for the translation.
+If you are interested in the new paid translation for activity streams, please let us know. Visit <a href="%s" target="_blank">BuddyPress Multilingual</a> forum page and leave a comment. We will be looking at these comments and see if there is real interest in this.', 'elm'), 'http://wordpress.org/support/plugin/buddypress-multilingual');
+			?>
+		</p>
+	</div>
+<?php
 }
 
 /**
@@ -203,72 +236,7 @@ function bpml_admin_message($message, $class = 'updated',
  */
 function bpml_default_settings() {
     return array(
-        'debug' => 0,
-        'activities' => array(
-            'filter' => 0,
-            'display_orphans' => 'all',
-            'orphans_fix' => 0,
-            'enable_google_translation' => 0,
-            'show_activity_switcher' => 0,
-        ),
-        'collected_activities' => array(
-            'activity_update' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => -1
-            ),
-            'friendship_created' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => -1
-            ),
-            'joined_group' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => -1
-            ),
-            'created_group' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => -1
-            ),
-            'new_blog' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => -1
-            ),
-            'new_blog_post' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => 1
-            ),
-            'new_blog_comment' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => 1
-            ),
-            'activity_comment' => array(
-                'translate_title' => 1,
-                'translate_title_cache' => 1,
-                'translate_content' => 1,
-                'translate_content_cache' => 1,
-                'translate_links' => -1
-            ),
-        ),
+        'debug' => 0
     );
 }
 
@@ -491,4 +459,22 @@ function bpml_ajax() {
     do_action('bpml_ajax');
     exit;
 }
-				
+
+/**
+ * Filters pages IDs.
+ *
+ * @global <type> $sitepress
+ * @param <type> $page_ids
+ * @return <type>
+ */
+function bpml_filter_page_ids( $page_ids ){
+	global $sitepress;
+	
+	$page_ids = bp_get_option( 'bp-pages' );
+	
+	foreach( $page_ids as $k => $page_id ){
+		$filtered_page_ids[$k] = icl_object_id( $page_id, 'page', true );
+	}
+
+	return $filtered_page_ids;
+}

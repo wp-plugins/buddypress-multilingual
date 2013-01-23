@@ -3,8 +3,8 @@ Contributors: icanlocalize, jozik
 Donate link: http://wpml.org/documentation/related-projects/buddypress-multilingual/
 Tags: i18n, translation, localization, language, multilingual, WPML, BuddyPress
 Requires at least: 3.0
-Tested up to: 3.4.2
-Stable tag: 1.4.0
+Tested up to: 3.5.0
+Stable tag: 1.4.2
 
 BuddyPress Multilingual allows BuddyPress sites to run fully multilingual using the WPML plugin.
 
@@ -25,8 +25,7 @@ Requirements:
 
  * Enables multilingual BuddyPress components
  * Filters all links to maintain right language selection
- * Records language and allows Google translation for BuddyPress activity component
- * Allows translation control for each type of activity
+ * Allows translation for each site element
 
 = New! Customize BuddyPress further using Types and Views =
 
@@ -61,7 +60,17 @@ For example, /fr/members/ to the French members list.
 
 == Changelog ==
 
-= 1.4.0 =
+= 1.4.2 =
+* Support BP 1.6.x
+* Bug fixes:
+* Language switcher is filtering too much
+* JS crop doesn't work on a secondary language
+* Sitewide activity widget breaks when BPML is enabled
+* Language switcher is not redirecting correctly
+* Members page doesn't have language parameter 
+* Translation for activity streams was disabled because it relied on the discontinued Google translate API. We can bring it back with paid Google translation. Visit BuddyPress Multilingual forum page and leave a comment. We will be looking at these comments and see if there is real interest in this.
+
+= 1.4.1 =
 * Support BP 1.6.x
 * All translated/duplicated pages works properly
 * Pages widget doesn't exclude translated BuddyPress pages
