@@ -2,7 +2,15 @@
 /*
  * Frontend functions
  */
-
+function bpml_get_ID_by_slug($page_slug) {
+    $page = get_page_by_path($page_slug);
+    if ($page) {
+        return $page->ID;
+    } else {
+        return null;
+    }
+}
+ 
 /**
  * Test function.
  * 
@@ -10,24 +18,6 @@
  */
 function bpml_test($a = '') {
     echo '<pre>'; print_r($a); echo '</pre>';
-}
-
-/**
- * Before BP header hook.
- *
- * Activate site_url() filter.
- */
-function bpml_bp_before_header_hook() {
-    add_filter('site_url', 'bpml_site_url_filter', 0);
-}
-
-/**
- * After BP footer hook.
- *
- * Remove site_url() filter.
- */
-function bpml_bp_after_footer_hook() {
-    remove_filter('site_url', 'bpml_site_url_filter', 0);
 }
 
 /**
@@ -40,16 +30,6 @@ function bpml_bp_after_footer_hook() {
 function bpml_site_url_filter($url, $path = '') {
     global $sitepress;
     return rtrim($sitepress->convert_url($url), '/');
-}
-
-/**
- * Removes site_url() filter when redirecting to random blog.
- */
-function bpml_blogs_redirect_to_random_blog() {
-    global $bp;
-    if ($bp->current_component == $bp->blogs->slug && isset($_GET['random-blog'])) {
-        remove_filter('site_url', 'bpml_site_url_filter', 0);
-    }
 }
 
 /**
@@ -74,91 +54,9 @@ function bpml_bp_core_get_root_domain_filter($url) {
  * @return <type>
  */
 function bpml_admin_url_filter($url, $path, $blog_id) {
+    if ( bpml_is_language_per_domain() ) return $url;
     $url = str_replace('/' . ICL_LANGUAGE_CODE . '/wp-admin', '/wp-admin/', $url);
     return $url;
-}
-
-/**
- * Translates all links in given string.
- * 
- * @global <type> $bpml_filter_hrefs_lang
- * @param <type> $string
- * @param <type> $lang
- * @param <type> $limit
- * @return <type>
- */
-function bpml_filter_hrefs($string = '', $lang = '', $limit = -1,
-        $position = NULL) {
-    global $bpml_filter_hrefs_lang, $bpml_filter_hrefs_count;
-    $bpml_filter_hrefs_count = 0;
-    $bpml_filter_hrefs_lang = $lang;
-    if (!is_null($position)) {
-        global $bpml_filter_hrefs_position;
-        $bpml_filter_hrefs_position = $position;
-    }
-    $return = preg_replace_callback('/href=["\'](.+?)["\']/', 'bpml_filter_href_matches', $string, $limit);
-    $bpml_filter_hrefs_count = 0;
-    return $return;
-}
-
-/**
- * Translates all links in given string from to.
- *
- * @global <type> $bpml_filter_hrefs_lang
- * @param <type> $string
- * @param <type> $lang
- * @param <type> $limit
- * @return <type>
- */
-function bpml_filter_hrefs_from_to($string = '', $lang_from = '', $lang_to = '',
-        $limit = -1, $position = NULL) {
-    global $bpml_filter_hrefs_lang, $bpml_filter_hrefs_lang_to, $bpml_filter_hrefs_count;
-    $bpml_filter_hrefs_count = 0;
-    $bpml_filter_hrefs_lang = $lang_from;
-    $bpml_filter_hrefs_lang_to = $lang_to;
-    if (!is_null($position)) {
-        global $bpml_filter_hrefs_position;
-        $bpml_filter_hrefs_position = $position;
-    }
-    $return = preg_replace_callback('/href=["\'](.+?)["\']/', 'bpml_filter_href_matches', $string, $limit);
-    $bpml_filter_hrefs_count = 0;
-    return $return;
-}
-
-/**
- * Translates links in matches provided from bpml_filter_hrefs().
- *
- * @global $sitepress $sitepress
- * @global  $bpml_filter_hrefs_lang
- * @param <type> $match
- * @return <type>
- */
-function bpml_filter_href_matches($match = array()) {
-    global $sitepress, $bpml_filter_hrefs_lang, $bpml_filter_hrefs_lang_to, $bpml_filter_hrefs_position, $bpml_filter_hrefs_count;
-
-    if (!empty($bpml_filter_hrefs_position)) {
-        if ($bpml_filter_hrefs_count != $bpml_filter_hrefs_position) {
-            $bpml_filter_hrefs_count += 1;
-            return $match[0];
-        }
-    }
-
-    if (!empty($bpml_filter_hrefs_lang_to)) {
-        $lang_to = ($bpml_filter_hrefs_lang_to == $sitepress->get_default_language()) ? '' : $bpml_filter_hrefs_lang_to . '/';
-        $converted =  preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $lang_to, $match[1], 1);
-    } else if ($sitepress->get_current_language() != $sitepress->get_default_language()) {
-        if ($bpml_filter_hrefs_lang !== $sitepress->get_default_language()) {
-            $converted = preg_replace('/\/' . $bpml_filter_hrefs_lang . '\//', '/' . $sitepress->get_current_language() . '/', $match[1], 1);
-        } else {
-            $converted = $sitepress->convert_url($match[1]);
-        }
-        // Check doubled
-        $converted = preg_replace('/\/' . $sitepress->get_current_language() . '\/' . $sitepress->get_current_language() . '\//', '/' . $sitepress->get_current_language() . '/', $converted, 1);
-    } else {
-        $replace = !empty($bpml_filter_hrefs_lang) ? '/\/' . $bpml_filter_hrefs_lang . '\//' : '/\//';
-        $converted = preg_replace($replace, '/', $match[1], 1);
-    }
-    return str_replace($match[1], $converted, $match[0]);
 }
 
 /**
@@ -172,69 +70,17 @@ function bpml_filter_href_matches($match = array()) {
  * @return <type>
  */
 function bpml_bp_uri_filter($url) {
-    global $sitepress;
+    
+    if ( bpml_is_language_per_domain() ) return $url;
+    
+    global $sitepress, $post;
     $default_language = $sitepress->get_default_language();
+	
     if ($default_language == ICL_LANGUAGE_CODE) {
         return $url;
     }
-    return preg_replace('/\/' . ICL_LANGUAGE_CODE . '\//', '/', $url, 1);
-    
-    echo $default_language;
-    
-}
 
-/**
- * Filters WPML languages switcher.
- *
- * This filtering is performed on BP pages.
- *
- * @global <type> $sitepress
- * @global <type> $bp_unfiltered_uri
- * @global <type> $post
- * @return <type>
- */
-function bpml_icl_ls_languages_filter($languages) {
-	global $sitepress, $bp_unfiltered_uri, $post;
-	
-	$first_page_slug = $bp_unfiltered_uri[0];
-	if( !empty( $first_page_slug ) ){
-		$page_id = get_page_by_path( $first_page_slug );
-		$page_id = $page_id->ID;
-		
-		if( $page_id ){
-			$pages_ids = bp_core_get_directory_page_ids();
-			
-			if( in_array( $page_id, $pages_ids ) ){
-				$search = array_search( $page_id, $pages_ids );
-				
-				if( $search == 'members' || $search == 'groups' || $search == 'forums' ){
-					if ( !empty ( $bp_unfiltered_uri ) ) {
-						$bp_unfiltered_uri_clone = $bp_unfiltered_uri;
-						unset( $bp_unfiltered_uri_clone[0] );
-						
-						$bp_slug = implode( '/', $bp_unfiltered_uri_clone );
-					}
-					
-					$languages = $sitepress->get_active_languages();
-
-					foreach( $languages as $code => $language ){
-						$languages[$code]['country_flag_url'] = ICL_PLUGIN_URL . '/res/flags/' . $code . '.png';
-						$languages[$code]['language_code'] = $code;
-						
-						if( $sitepress->get_display_language_name( $code, $sitepress->get_current_language() ) ){
-							$languages[$code]['translated_name'] = $sitepress->get_display_language_name( $code, $sitepress->get_current_language() );
-						} else {
-							$languages[$code]['translated_name'] = $lang['english_name'];
-						}
-						
-						$languages[$code]['url'] = get_permalink( icl_object_id( $post->ID, 'page', false, $code ) ) . $bp_slug;
-					}
-				}
-			}
-		}
-	}
-	
-	return $languages;
+    return preg_replace('/(\/)?' . ICL_LANGUAGE_CODE . '\//', '$1', $url, 1);
 }
 
 /**
@@ -257,9 +103,62 @@ function bpml_debug($message, $class = 'bpml-debug-updated') {
 }
 
 /**
- * Header hook.
+ * BPML language switcher filter.
+ * 
+ * Active only on BP pages.
+ * 
+ * @uses add_filter( 'icl_ls_languages', 'bpml_icl_ls_languages_filter' );
+ * @uses bp_current_component()
+ *
+ * @global <type> $sitepress
+ * @param <type> $languages Active languages on current page
+ * @return <type>
  */
-function bpml_wp_head_hook() {
+function bpml_icl_ls_languages_filter( $languages ) {
+    
+    // only if BP page, translation exists or home(?) 
+    if ( !bp_current_component() || count( $languages ) == 1 ) {
+        return $languages;
+    }
+
+    global $sitepress, $bp;
+
+    // Get current page
+    if ( isset( $languages[$sitepress->get_current_language()]['url'] )
+            && isset( $bp->canonical_stack['canonical_url'] ) ) {
+        $_url = $languages[$sitepress->get_current_language()]['url'];
+        // Append everything after base URL (canonical actions, items, components...)
+        if ( strpos( $bp->canonical_stack['canonical_url'], $_url ) === 0
+                && strlen( $bp->canonical_stack['canonical_url'] ) > strlen( $_url ) ) {
+            $_add_url = substr( $bp->canonical_stack['canonical_url'],
+                    strlen( $_url ) );
+        }
+    }
+
+    foreach ( $languages as $code => &$language ) {
+        // Filter only other languages (no home or default language)
+        if ( $code != $sitepress->get_current_language()
+                && $sitepress->language_url( $code ) != $language['url']
+                && !empty( $_add_url ) ) {
+            $language['url'] = rtrim( $language['url'], '/\\' ) . '/'
+                    . trim( $_add_url, '/\\' ) . '/';
+        }
+    }
+
+    return $languages;
+}
+
+/**
+ * Removes WPML post availability the_content filter.
+ * 
+ * @global type $icl_language_switcher
+ */
+function bpml_remove_wpml_post_availability_hook() {
+    if ( bp_current_component() ) {
+        global $icl_language_switcher;
+        remove_filter( 'the_content',
+                array($icl_language_switcher, 'post_availability'), 100 );
+    }
 }
 
 /**
@@ -268,7 +167,7 @@ function bpml_wp_head_hook() {
  * @global  $bp
  * @return <type>
  */
-function bpml_wp_footer() {
+function bpml_wp_footer_debug() {
 
     if (!current_user_can('administrator') || !defined('BPML_DEBUG') || !BPML_DEBUG) {
         return '';
@@ -281,17 +180,15 @@ function bpml_wp_footer() {
     }
     global $bp, $bpml;
 	
-	var_dump($bpml);
-	
     echo '<pre>';
     echo '
-		BPML Settings
+		<h3>$GLOBALS[\'bpml\']</h3>
 		';
-    var_dump($bpml);
+    bpml_test( $bpml, false );
     echo '
 
-		BuddyPress ';
-    print_r($bp);
+		<h3>$GLOBALS[\'bp\']</h3> ';
+    bpml_test( $bp, false );
     echo '</pre></div>';
 	
 }

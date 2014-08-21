@@ -3,33 +3,33 @@ Contributors: icanlocalize, jozik
 Donate link: http://wpml.org/documentation/related-projects/buddypress-multilingual/
 Tags: i18n, translation, localization, language, multilingual, WPML, BuddyPress
 Requires at least: 3.0
-Tested up to: 3.5.0
-Stable tag: 1.4.2
+Tested up to: 3.9.2
+Stable tag: 1.5
 
 BuddyPress Multilingual allows BuddyPress sites to run fully multilingual using the WPML plugin.
 
 == Description ==
 
-The plugin allows building multilingual BuddyPress sites. It works with single-site or multi-site BuddyPress installs. Both the main site and child blogs can run multilingual.
+The plugin allows building multilingual BuddyPress sites. It works with single-site or multi-site BuddyPress installations. Both the main site and child blogs can run multilingual.
 
-Guest blogs can choose their language and create multilingual contents. Additionally, each guest can choose the admin language individually.
+Guest blogs can choose their language and create multilingual contents. Additionally, each guest can choose the admin language individually .
 
 This plugin requires [WPML](http://wpml.org/). It uses WPML's language API and hooks to BuddyPress to make it multilingual.
 
 Requirements:
 
-* WPML 2.6.0 or higher. You must enable 'languages per directories'.
-* Supports BuddyPress versions up to 1.6.x
+* WPML 3.0.x or higher. You must enable 'languages per directories' or 'languages per domain'.
+* Supports BuddyPress versions up to 2.x
 
 = Features =
 
  * Enables multilingual BuddyPress components
  * Filters all links to maintain right language selection
- * Allows translation for each site element
+ * Allows translation of profile fields
 
 = New! Customize BuddyPress further using Types and Views =
 
-BPML is now compatible with [Types - The Custom Types and Custom Fields Plugin](http://wp-types.com/home/types-manage-post-types-taxonomy-and-custom-fields/) and [Views - The Custom Content Display Plugin](http://wp-types.com/home/views-create-elegant-displays-for-your-content/). Types and Views allow you to customize BuddyPress futher by controlling custom content and displaying it any way you choose.
+BPML is now compatible with [Types - The Custom Types and Custom Fields Plugin](http://wp-types.com/home/types-manage-post-types-taxonomy-and-custom-fields/) and [Views - The Custom Content Display Plugin](http://wp-types.com/home/views-create-elegant-displays-for-your-content/). Types and Views allow you to customize BuddyPress further by controlling custom content and displaying it any way you choose.
 
 = Need Support? =
 
@@ -42,23 +42,35 @@ Please submit support requests to **[WPML forum](http://wpml.org/forums/forum/en
 == Installation ==
 
 1. Unzip and upload contents of sitepress-bp.zip file to the `/wp-content/plugins/` directory.
-2. Activate the plugin through the Network 'Plugins' menu in WordPress (only available as 'Network' plugin).
-3. Enable WPML (can be enabled before this BuddyPress Multilingual).
-4. To set preferences go to Settings/BuddyPress Multilingual on main blog.
+2. Activate the plugin.
+3. Enable WPML and BuddyPress.
 
 == Frequently Asked Questions ==
 
-= Why do I need to enable languages per directories? =
+= Why cannot I use language as parameter? =
 
-BuddyPress itself uses virtual directories for its elements. The only way we managed to add language information is by adding a language prefix to paths.
-
-For example, /fr/members/ to the French members list.
+Support for language as parameter will not be added soon as we're looking for solutions other than filtering all kinds of BuddyPress navigation and action links.
 
 == Screenshots ==
 
 1. Multilingual main BuddyPress page.
 
 == Changelog ==
+
+= 1.5 =
+* Supports BP 2.x
+* Supports languages per domain
+* Bug fixes:
+* Language switcher does not work on BuddyPress pages
+* Error while creating a group from a second language
+* Not able to switch to non-default language's home page
+* Footer language switcher preview is missing when BuddyPress Multilingual is active
+* Not able to enable debug mode in Settings > BPML
+* Can't crop avatar in other language version
+* Buddypress Profile URL is not correct
+* Member link in the activity page is wrong
+* View link in Members and Profile points to a wrong page
+* Cleared a bunch of notices
 
 = 1.4.2 =
 * Support BP 1.6.x
@@ -67,7 +79,7 @@ For example, /fr/members/ to the French members list.
 * JS crop doesn't work on a secondary language
 * Sitewide activity widget breaks when BPML is enabled
 * Language switcher is not redirecting correctly
-* Members page doesn't have language parameter 
+* Members page doesn't have language parameter
 * Translation for activity streams was disabled because it relied on the discontinued Google translate API. We can bring it back with paid Google translation. Visit BuddyPress Multilingual forum page and leave a comment. We will be looking at these comments and see if there is real interest in this.
 
 = 1.4.1 =
@@ -77,7 +89,7 @@ For example, /fr/members/ to the French members list.
 
 = 1.3.0 =
 * Support BP 1.5.x
-* Language selector doesn't appear on the home page when a page is selected as the front page 
+* Language selector doesn't appear on the home page when a page is selected as the front page
 * Small fix on main navigation menu
 
 = 1.2.1 =
